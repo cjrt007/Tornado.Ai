@@ -40,6 +40,8 @@ managing Node.js services in production.
    sudo -u tornado pnpm install --frozen-lockfile
    sudo -u tornado pnpm build
    ```
+   _Quick bootstrap_: run `sudo -u tornado pnpm setup` to copy `.env`, create `data/`, and
+   install dependencies in one step (without `--frozen-lockfile`).
 4. **Configure environment variables** by editing `/opt/tornado-ai/.env` or placing a
    drop-in file under `/etc/tornado-ai.env`. Example snippet:
    ```ini
@@ -108,6 +110,8 @@ managing Node.js services in production.
    pnpm install --frozen-lockfile
    pnpm build
    ```
+   _Quick bootstrap_: `pnpm setup` copies `.env`, prepares the data directory, and installs
+   dependencies automatically for development environments.
 3. **Configure environment variables** by editing `C:\TornadoAI\.env` or defining
    system-wide variables via:
    ```powershell
@@ -124,6 +128,30 @@ managing Node.js services in production.
    ```
 5. **IIS/Reverse proxy integration** — Configure IIS or an external appliance to terminate
    TLS and proxy requests to `http://localhost:7700`.
+
+## Containerized Deployment (Docker & Compose)
+
+The repository includes a multi-stage Dockerfile and `docker-compose.yml` for streamlined
+container builds.
+
+1. **Build the runtime image**:
+   ```bash
+   docker build -t tornado-ai:prod .
+   ```
+2. **Prepare environment configuration** by copying `.env.example` to `.env` and updating
+   secrets. Mount this file via `env_file` or inject variables through your orchestrator.
+3. **Launch with Docker Compose** (API + PostgreSQL):
+   ```bash
+   docker compose up --build
+   ```
+   The Compose stack exposes port `7700`, persists SQLite data under `./data`, provisions a
+   PostgreSQL 15 instance, and waits for container health checks before starting the API.
+4. **Kubernetes/Ops notes**:
+   - Convert the Docker image into a Deployment with a ConfigMap/Secret providing `.env`
+     values.
+   - Mount a PersistentVolume for `/app/data` when using SQLite, or switch to PostgreSQL by
+     setting `DATABASE_TYPE=postgres` and `DATABASE_URL` secrets.
+   - Translate the compose health checks to readiness/liveness probes hitting `/health`.
 
 ## Database Configuration
 
@@ -177,10 +205,10 @@ Adjust paths accordingly for Windows (`C:\TornadoAI`).
 
 ## FAQ
 
-**Can I run Tornado.ai in Docker or Kubernetes?**  
-Yes. Build a multi-stage image that runs `pnpm install --frozen-lockfile` and `pnpm build`.
-Expose port 7700 and mount persistent volumes for `data/` and logs. In Kubernetes, run as a
-Deployment with a ConfigMap/Secret for environment variables and optionally sidecar the UI.
+**Can I run Tornado.ai in Docker or Kubernetes?**
+Yes. Use the bundled Dockerfile and Compose stack for local or CI environments. For
+Kubernetes, build/push the image, mount configuration via ConfigMaps/Secrets, and reuse the
+compose health checks as readiness probes.
 
 **How do I deploy the React UI?**  
 Run `pnpm --filter ui build` inside the `ui/` workspace (once populated) and host the output

@@ -12,6 +12,10 @@ checklist automation workflows.
   logging, and tool execution approvals.
 - **Core subsystems**: Decision engine (AIDE), tool orchestration (ASME/APME), autonomous
   agents (AAAM), visualization (AVE), caching (SCM), observability, and reporting.
+- **Streamlined setup**: `pnpm setup` bootstraps environment files, folders, and dependencies
+  in a single step.
+- **Containerization**: First-class Dockerfile and Compose stack for reproducible deployments
+  across workstations and CI pipelines.
 
 > ⚠️ **Warning**: Tornado.ai is intended for authorized security testing only. Always obtain
 > explicit permission before assessing a target and follow responsible disclosure
@@ -22,13 +26,15 @@ checklist automation workflows.
 1. [Repository Layout](#repository-layout)
 2. [Prerequisites](#prerequisites)
 3. [Installation](#installation)
+   - [Quick Start (One-command setup)](#quick-start-one-command-setup)
    - [Linux (Ubuntu/Debian)](#linux-ubuntudebian)
    - [Windows 11/10](#windows-1110)
 4. [Configuration](#configuration)
 5. [Running the Platform](#running-the-platform)
-6. [Additional Documentation](#additional-documentation)
-7. [FAQ](#faq)
-8. [License](#license)
+6. [Containerized Deployment](#containerized-deployment)
+7. [Additional Documentation](#additional-documentation)
+8. [FAQ](#faq)
+9. [License](#license)
 
 ## Repository Layout
 
@@ -72,6 +78,23 @@ implementations to accelerate future development of the full platform.
   `CREATE ROLE` privileges prior to running migrations.
 
 ## Installation
+
+### Quick Start (One-command setup)
+
+1. Ensure [Corepack](https://nodejs.org/api/corepack.html) is enabled (ships with Node.js 18+):
+   ```bash
+   corepack enable
+   ```
+2. Clone the repository and run the bootstrapper:
+   ```bash
+   git clone https://github.com/your-org/tornado-ai.git
+   cd tornado-ai
+   pnpm setup
+   ```
+
+The setup routine copies `.env.example` to `.env` when missing, prepares the `data/` directory
+for SQLite/cache artifacts, installs dependencies (auto-installing pnpm via Corepack if
+necessary), and prints follow-up commands for linting, testing, and starting the dev server.
 
 ### Linux (Ubuntu/Debian)
 
@@ -199,6 +222,29 @@ node dist/server.js
 Use a process manager (pm2, systemd, Docker) for long-running deployments. Serve the UI via
 a static hosting provider (Vercel, Netlify) or behind the same reverse proxy as the API.
 
+## Containerized Deployment
+
+### Build the image
+
+```bash
+docker build -t tornado-ai:dev .
+```
+
+The multi-stage Dockerfile installs dependencies with pnpm, compiles the TypeScript source,
+and produces a production-ready runtime image that exposes port `7700`.
+
+### Run with Docker Compose
+
+1. Copy `.env.example` to `.env` and update secrets/connection details as needed.
+2. Launch the stack (API + optional PostgreSQL) with persistent volumes:
+   ```bash
+   docker compose up --build
+   ```
+3. Access the API at http://localhost:7700 once the health check reports a healthy status.
+
+The Compose file mounts `./data` for SQLite storage, provisions a PostgreSQL container with
+health checks, and wires the Fastify service to use environment variables from `.env`.
+
 ### Testing & Quality
 
 ```bash
@@ -234,9 +280,10 @@ setup/verification routes from `src/auth/handlers/auth.ts` through your Fastify 
 The registry is defined in `src/tools/definitions.ts` and exported via `src/mcp/registry`.
 `pnpm mcp` prints the descriptor catalog for client consumption.
 
-**Can I containerize Tornado.ai?**  
-Yes. Use a multi-stage Dockerfile that installs dependencies, runs `pnpm build`, and copies
-`dist/` plus the `ui` build output. Ensure environment variables are supplied at runtime.
+**Can I containerize Tornado.ai?**
+Yes. The repository ships with a production-focused Dockerfile and `docker-compose.yml`.
+Build via `docker build -t tornado-ai:dev .` and launch the stack with `docker compose up` to
+run the API alongside an optional PostgreSQL service.
 
 **What observability features are available out of the box?**  
 Structured JSON logs are emitted via Pino (`src/core/metrics/logger.ts`). Metrics and health
