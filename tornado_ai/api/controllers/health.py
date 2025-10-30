@@ -18,6 +18,9 @@ class HealthResponse:
     telemetryCounters: dict
     toolCategories: dict
     lastAuditEvent: str | None = None
+    cacheStats: dict
+    telemetryCounters: dict
+    toolCategories: dict
 
 
 async def get_health_status() -> HealthResponse:

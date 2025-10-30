@@ -11,7 +11,5 @@ async def test_execute_command_uses_cache(tmp_path, monkeypatch):
     payload = CommandPayload(toolId="nmap_scan.sim", params={"targets": ["10.0.0.1"]})
     first = await execute_command(payload)
     assert first.result.status == "completed"
-    assert "runtime" in first.result.telemetry
-    assert isinstance(first.result.telemetry["runtime"], dict)
     second = await execute_command(payload)
     assert second.result.cached is True

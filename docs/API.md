@@ -32,9 +32,8 @@ custom parsing.
 
 - **POST `/api/command/`** – Body: `CommandPayload` with `toolId`, optional
   parameters, `useCache`, and `userId`. Response: `CommandResponse` containing a
-  `ToolExecutionResult` (with cache metadata, runtime policy details, and adapter
-  telemetry) plus ERR fallback actions. Successful calls append an entry to
-  `data/audit.log.jsonl`.
+  `ToolExecutionResult` (with cache metadata and adapter telemetry) plus ERR
+  fallback actions. Successful calls append an entry to `data/audit.log.jsonl`.
 
 ### Observability & Caching (AVE / SRTD / SCM)
 
@@ -69,27 +68,6 @@ custom parsing.
   `ToolPlan` structures that can be re-used directly in MCP scripts.
 - Checklist templates are delivered as JSON to simplify ingestion, but the raw
   CSV files live under `data/checklists/` for offline workflows.
-
-### Runtime policy telemetry
-
-`ToolExecutionResult.telemetry` now includes a `runtime` object mirroring the
-policy detected by `tornado_ai.tools.runtime`. A typical payload looks like:
-
-```json
-"runtime": {
-  "host_os": "windows",
-  "distribution": null,
-  "requires_container": true,
-  "container_image": "tornado-ai-kali:latest",
-  "launcher_hint": "docker compose -f docker/kali/docker-compose.yml up -d",
-  "notes": [
-    "Windows hosts delegate tool execution to the Kali GUI container"
-  ]
-}
-```
-
-See the “Runtime policy recap” section of the [README](../README.md#runtime-policy-recap)
-for usage guidance and override flags.
 
 ## Error Handling
 

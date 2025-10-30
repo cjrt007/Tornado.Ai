@@ -1,20 +1,12 @@
 # Tornado.ai (Python Edition)
 
-Tornado.ai is a security operations playground delivered as a Python-first
-FastAPI service. It provides simulated security tooling, a decision engine for
-MCP-compatible LLM agents (Claude, GPT, Copilot, etc.), observability hooks,
-content-addressed caching, and workflow automation for attack simulations.
-
-## Overview
-
-- **Decision intelligence** – The Advanced Intelligent Decision Engine (AIDE)
-  orchestrates TSA, SACD, IPO, ROE, ERR, and ASME to build audit-ready plans.
-- **Tooling governance** – AAAM, IBA, SCAA, ICMDA, AEGDEM, and IVC models keep
-  processes, vulnerability cards, and exploit simulations synchronized.
-- **Observability** – Structured logging, counters, latency histograms, and
-  spans expose behaviour for dashboards (AVE, SRTD, PVT).
-- **Runtime awareness** – A Smart Caching Manager (SCM) and Kali runtime policy
-  decide whether tools run on the host or inside the Kali GUI container.
+Tornado.ai is a security operations playground that now ships as a Python-first
+FastAPI service. The project bundles opinionated defaults for role based access
+control, feature toggle management, simulated scan profiles, and a curated tool
+catalog that mirrors the original TypeScript implementation. The new decision
+intelligence layer lets MCP-compatible LLM agents (Claude, GPT, Copilot, etc.)
+perform security assessments through typed tools, caching, progress tracking,
+and rich telemetry.
 
 ## Tech Stack
 
@@ -27,34 +19,9 @@ content-addressed caching, and workflow automation for attack simulations.
 
 ## Architecture at a Glance
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) – diagrams and component notes
-  for AIDE, TSA, IPO, SACD, SCM, telemetry, and visualization engines.
-- [`docs/TOOLS.md`](docs/TOOLS.md) – catalog structure, dry-run adapters, and
-  policy weights per category (network, webapp, cloud, binary, ctf, osint).
-- [`docs/API.md`](docs/API.md) – REST + MCP payload contracts with walkthroughs.
-- [`docs/AI-CLIENTS.md`](docs/AI-CLIENTS.md) – integration guide for GPT/Copilot
-  agents and the [Claude Desktop MCP walkthrough](docs/AI-CLIENTS.md#configuring-anthropic-claude-desktop-via-mcp).
-- [`docs/MCP.md`](docs/MCP.md) – configuring Claude/GPT/Copilot agents to call
-  Tornado.ai tools through the MCP protocol.
-- [`docs/CHECKLISTS.md`](docs/CHECKLISTS.md) – OWASP CSV templates and loader
-  extension points with references back into this README.
+### Local Python environment
 
-## Installation & Runtime Options
-
-See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for step-by-step guides,
-platform caveats, and FAQ coverage. The summary below highlights the key paths.
-
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+ (for optional UI simulations/tests)
-- Docker Engine 24+ and Docker Compose v2 (required for the Kali GUI profile)
-- Git, curl, and make (optional) for source management
-
-### Linux or macOS host
-
-1. Create and activate a virtual environment.
-2. Install dependencies:
+1. Install dependencies (the project uses a `pyproject.toml`):
    ```bash
    pip install -e .[dev]
    ```
@@ -73,37 +40,17 @@ When the host distribution is detected as Kali Linux, Tornado.ai executes tools
 directly on the host. Install the Python requirements as above. No Docker
 container is provisioned for tool execution in this mode.
 
-### Windows host with Kali GUI container
+### Optional: Docker runtime
 
-Windows machines delegate tool execution to the bundled Kali image. Build and
-start the GUI workspace with Docker Compose:
-
-```powershell
-cd docker\kali
-docker compose up -d
-```
-
-The container exposes RDP on `localhost:3390` (user `kali`, password `kali` by
-default). Attach via Remote Desktop to access the Kali desktop, launch security
-tools, and share project data mounted at `/workspace/data`.
-
-Stop the environment when finished:
-
-```powershell
-docker compose down
-```
-
-### Optional: API Docker runtime
-
-To isolate the FastAPI service itself, build the Python container from the
-repository root:
+Build and run the container to keep Python tooling isolated from the host:
 
 ```bash
 docker build -t tornado-ai .
 docker run --rm -p 8000:8000 --env-file .env tornado-ai
 ```
 
-For live code iteration:
+If you need live code iteration, mount the repository as a volume and override
+the startup command:
 
 ```bash
 docker run --rm -it -p 8000:8000 -v "$(pwd)":/app \
@@ -111,15 +58,10 @@ docker run --rm -it -p 8000:8000 -v "$(pwd)":/app \
   uvicorn tornado_ai.server:app --host 0.0.0.0 --reload
 ```
 
-### Runtime policy recap
+See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for an advanced guide that
+covers Linux, Windows, Docker, prerequisites, and FAQs.
 
-The runtime detector (`tornado_ai.tools.runtime`) records whether Tornado.ai
-should run tools natively or via the Kali container. REST responses surface the
-decision under `result.telemetry.runtime`. Override behaviour with
-`TORNADO_KALI_MODE=force-container` or `TORNADO_KALI_MODE=force-host` when
-testing automation flows.
-
-## Exposed API Surface
+### Exposed API Surface
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
@@ -144,7 +86,7 @@ testing automation flows.
 Refer to [`docs/API.md`](docs/API.md) for payload details, flow diagrams, and
 cross-links into the decision engine docs.
 
-## Security Intelligence Stack
+### Security Intelligence Stack
 
 - **AIDE – Advanced Intelligent Decision Engine** orchestrates TSA, SACD, IPO,
   ROE, and ERR to drive MCP automation. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#decision-intelligence).
@@ -158,14 +100,14 @@ cross-links into the decision engine docs.
   [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#smart-attack-chain-discovery).
 - **AAAM, IBA, SCAA, ICMDA, AEGDEM** drive the simulated process manager (APME)
   and vulnerability visualization flows documented in
-  [`docs/AI-CLIENTS.md`](docs/AI-CLIENTS.md#configuring-anthropic-claude-desktop-via-mcp) and
+  [`docs/AI-CLIENTS.md`](docs/AI-CLIENTS.md) and
   [`docs/CHECKLISTS.md`](docs/CHECKLISTS.md).
 - **SCM – Smart Caching Manager** delivers TTL + LRU caching with observability
   metrics. Refer to [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#smart-caching-manager).
 - **AVE/SRTD/PVT/IVC** power the visualization endpoints – see
   [`docs/AI-CLIENTS.md`](docs/AI-CLIENTS.md#visualization-suite).
 
-## Testing Checklists
+### Testing checklists
 
 The project now ships with CSV-backed OWASP Top 10 web and mobile templates.
 Fetch them via `/api/checklists/default` or explore how to extend the loader in
