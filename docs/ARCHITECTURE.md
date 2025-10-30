@@ -1,46 +1,53 @@
 # Tornado.ai Architecture Overview
 
-Tornado.ai follows a hexagonal architecture composed of domain-focused modules that can be
-wired together through Fastify adapters and MCP integrations.
+The Python port of Tornado.ai keeps the original domain concepts while swapping
+the delivery layer to FastAPI and Pydantic. The codebase is organized around a
+clean separation between data models, stateful domain services, and HTTP
+adapters.
 
-## Core Engines
+## Core Building Blocks
 
-- **AIDE** — orchestrates decision making for tool selection, parameter optimization, and
-  attack chain discovery through the TSA, IPO, and SACD submodules.
-- **AAAM** — coordinates autonomous security agents (bug bounty, CTF, CVE mapping, exploit
-  engineering) via dedicated agent modules.
-- **ASME** — standardizes the execution lifecycle for offensive security tooling. Each tool
-  definition in `src/tools/definitions.ts` references the required permissions, expected
-  inputs, and estimated runtimes.
-- **AVE** — powers real-time dashboards, progress tracking, and vulnerability card visual
-  components exposed through the `viz/` namespace.
-- **APME**, **SCM**, **ROE**, **ERR** — process management, caching, optimization, and
-  resilience building blocks.
+- **Control Center** – `tornado_ai.core.control.center.ControlCenter` manages the
+  in-memory feature toggles, RBAC roles, and scan profiles. Mutations are
+  validated with Pydantic models before they are applied.
+- **RBAC Policy** – `tornado_ai.core.policy.rbac` provides helper utilities for
+  expanding wildcard permissions and calculating enforcement metadata used by
+  the control center.
+- **Cache** – `tornado_ai.core.cache` implements a content-addressable cache for
+  simulated tool runs and other expensive lookups.
+- **Audit Status** – `tornado_ai.core.audit.status` offers lightweight helpers
+  for producing timestamps and metadata that feed the health endpoint.
+- **Tool Catalog** – `tornado_ai.tools.catalog` and
+  `tornado_ai.tools.definitions` capture the curated catalog and simulated MCP
+  registry definitions used throughout the application.
+
+## HTTP Layer
+
+- `tornado_ai.api.routes` wires FastAPI routers for health reporting and control
+  surface mutations.
+- `tornado_ai.api.controllers` contains request handlers that mediate between
+  HTTP requests and the domain services.
+- `tornado_ai.server` bootstraps the FastAPI application, configures structured
+  logging, and registers startup hooks.
+
+## Configuration & Environment
+
+Runtime configuration is supplied via `tornado_ai.config`, which reads from
+environment variables (with sensible defaults) and produces typed settings
+objects. `python-dotenv` can be used locally to load values from a `.env` file.
 
 ## Data Flow
 
-1. Requests enter through Fastify routes (`src/api/routes`).
-2. Authentication middleware attaches session and MFA context.
-3. RBAC policies (`src/core/policy/rbac.ts`) gate access to domain services.
-4. Domain services orchestrate tool executions, audits, and reporting.
-5. Observability modules capture structured logs and metrics.
-6. Responses and events feed the MCP server for downstream agents and the React UI.
-
-## Directory Reference
-
-- `src/core/*` — domain services for audit logging, caching, metrics, policy, process, and
-  decision intelligence.
-- `src/auth/*` — authentication handlers, MFA utilities, and middleware.
-- `src/mcp/*` — Model Context Protocol bindings that expose tools to external agents.
-- `src/reports/*` — report generation pipelines for PDF, HTML, and DOCX outputs.
-- `src/checklists/*` — checklist import/export, progress tracking, and schema management.
-- `src/viz/*` — visualization engines powering dashboards and cards.
-- `ui/` — React + Tailwind UI application (scaffold in progress).
+1. Incoming requests enter the FastAPI router layer (`/api`).
+2. Controllers delegate to domain services such as the control center or tool
+   catalog.
+3. Domain services validate incoming payloads with shared Pydantic models and
+   apply mutations to the in-memory state.
+4. Responses return the updated `ControlSurface` or health metadata to clients.
 
 ## Future Enhancements
 
-- Implement Fastify plugins for authentication, MFA setup, and session management.
-- Integrate better-sqlite3 for persistence and provide migration scripts.
-- Add comprehensive Vitest suites covering registry validation, cache behavior, auth flows,
-  and MCP interactions.
-- Build the React UI using Vite, Tailwind CSS, and Zustand for state management.
+- Expose the MCP registry over HTTP/WebSocket once the transport adapters are
+  reintroduced.
+- Persist control-center state to disk or a backing store.
+- Rebuild the interactive UI against the new Python API surface.

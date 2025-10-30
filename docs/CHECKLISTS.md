@@ -1,21 +1,20 @@
 # Checklist Management
 
-Tornado.ai ships with default OWASP-aligned checklists and allows importing custom CSV-based
-checklists. Checklist items follow the schema defined in `src/shared/types.ts` and support
-tracking of status, severity, evidence attachments, and tester attribution.
+The Python port keeps the checklist data models (`ChecklistItem` and
+`ChecklistCollection` in `tornado_ai.shared.types`) but does not yet expose API
+endpoints for importing or managing checklists. The previous TypeScript
+implementation supported CSV import/export and rich status tracking; those flows
+are slated for a future milestone once persistence is reintroduced.
 
-## Default Checklists
+## Current Capabilities
 
-1. **OWASP Web Application Testing** — imported from the official testing guide.
-2. **OWASP Mobile Application Testing** — sourced from the MASTG project.
-3. **OWASP Cheat Sheet Series** — provides reference-oriented tasks.
+- Pydantic models ensure checklist items follow the expected schema (status,
+  severity, evidence references, and ownership metadata).
+- Domain services can consume these models internally if you embed Tornado.ai as
+  a Python library.
 
-## Features
+## Roadmap
 
-- CSV import/export with evidence retention.
-- Progress tracking across `not_started`, `in_progress`, `completed`, `not_applicable`.
-- Bulk update utilities to accelerate repetitive workflows.
-- Evidence attachment references and note taking per item.
-
-Future iterations will integrate with the reporting module to embed checklist outcomes into
-executive and technical report templates.
+1. Add REST endpoints to manage checklist collections.
+2. Persist checklist state to disk or a database backend.
+3. Reconnect checklist outcomes to reporting pipelines.
