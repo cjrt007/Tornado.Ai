@@ -78,6 +78,19 @@ content-addressed cache, the control center state machine, and the tool
 catalog/registry validation logic to ensure functional parity with the former
 TypeScript version.
 
-## License
+## Project Layout
+
+```
+tornado_ai/
+  api/            # FastAPI routers and controllers
+  auth/           # Authentication helpers and MFA utilities
+  checklists/     # Compliance checklists and reporting scaffolding
+  config/         # Environment-driven configuration objects
+  core/           # Domain services (audit log, cache, control center, RBAC)
+  mcp/            # Offline MCP registry helpers
+  shared/         # Pydantic models shared across modules
+  tools/          # Tool definitions and catalog datasets
+  ui/             # Console templates, static assets, and registration helpers
+```
 
 Distributed under the MIT License. See `LICENSE` for details.
