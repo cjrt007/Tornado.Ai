@@ -15,10 +15,6 @@ about every step in the workflow.
 - **Smart Caching Manager (SCM)** – `tornado_ai.core.cache.manager.scm` wraps a
   TTL + LRU content-addressed cache to deduplicate tool executions and expose
   hit/miss telemetry.
-- **Tool Runtime Policy** – `tornado_ai.tools.runtime.tool_runtime` inspects the
-  host OS/distribution and decides whether the Kali GUI container must be used
-  for tool execution. The decision is surfaced through command telemetry (see
-  the README runtime recap).
 - **Tool Registry** – `tornado_ai.tools.registry.tool_registry` centralizes tool
   definitions, dry-run adapters, and MCP schema exports used by ASME and the MCP
   server.
