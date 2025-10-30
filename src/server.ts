@@ -25,8 +25,7 @@ if (process.env.NODE_ENV !== 'test') {
   app
     .listen({ port: config.server.port, host: config.server.host })
     .then(() => {
-      app.log.info({
-        msg: 'Tornado.ai server running',
+      app.log.info('Tornado.ai server running', {
         port: config.server.port,
         host: config.server.host
       });
