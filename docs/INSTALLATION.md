@@ -27,7 +27,6 @@ a living FAQ for the most common issues.
 ### Software Requirements
 
 - Python **3.11** or newer.
-- Node.js **18** or newer (for running Vitest decision-engine coverage).
 - Git (for cloning the repository and tracking updates).
 - Internet access for downloading Python packages and static assets.
 - (Optional) SQLite 3.39+ if you intend to persist cached MCP datasets.
@@ -218,17 +217,11 @@ TORNADO_LOG_LEVEL=INFO
 Run through the following checks to confirm the deployment:
 
 1. `pytest` succeeds without failures.
-2. Install and execute the Vitest suite:
-   ```bash
-   cd ui
-   npm install
-   npm test
-   ```
-3. `curl http://localhost:8000/api/health/` returns a JSON payload containing the
-   MCP registry summary, cache stats, and telemetry counters.
-4. Visiting `http://localhost:8000/console` renders the advanced UI with feature
+2. `curl http://localhost:8000/api/health/` returns a JSON payload containing
+   the MCP registry summary.
+3. Visiting `http://localhost:8000/console` renders the advanced UI with feature
    toggles, role controls, and scan profiles.
-5. Mutating a feature/role/scan via the UI produces entries in the in-memory
+4. Mutating a feature/role/scan via the UI produces entries in the in-memory
    activity feed (visible in the console).
 
 ## 7. Frequently Asked Questions

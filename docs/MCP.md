@@ -17,13 +17,11 @@ integration patterns available right now.
 
 ## 1. Capabilities Overview
 
-- Tornado.ai exposes REST endpoints under `/api/control/` (control surface),
-  `/api/intelligence/` (decision logic), and `/api/command/` (tool execution)
-  so MCP clients can orchestrate full assessments end-to-end.
-- The offline MCP registry (via `tornado_ai.tools.registry.tool_registry`)
-  mirrors the original MCP schema: every entry includes `id`, `category`,
-  `summary`, `input_schema`, `output_schema`, `required_permissions`, and an
-  estimated duration.
+- Tornado.ai exposes REST endpoints under `/api/control/` that surface the
+  latest feature toggles, roles, and scan definitions.
+- The offline MCP registry (in `tornado_ai.tools.definitions`) mirrors the
+  original MCP schema: every entry includes `id`, `category`, `summary`,
+  `input_schema`, `required_permissions`, and an estimated duration.
 - A native MCP transport is not yet bundled, but the registry is intentionally
   reusable so you can federate it into your own MCP server.
 
@@ -93,15 +91,12 @@ print(f"Registry tracks {registry_size()} tool stubs")
 
 for definition in definitions:
     print(definition.id, definition.category, definition.required_permissions)
-
-schemas = registry_as_json_schemas()
-print("JSON schemas ready for MCP ingestion", schemas[0])
 ```
 
 The returned objects can be serialised directly to JSON/YAML and imported into
 external MCP servers or automation frameworks. When building a bridge, map the
-`input_schema` field to your server's command payload, honour
-`required_permissions`, and reuse `output_schema` to validate agent responses.
+`input_schema` field to your server's command payload and align permission
+checks with your RBAC model.
 
 ## 5. Operational Tips
 
@@ -109,8 +104,8 @@ external MCP servers or automation frameworks. When building a bridge, map the
   infrastructure-as-code to track changes to the allow/deny lists.
 - **Secrets**: Avoid storing credentials in plain YAML. Reference environment
   variables or inject headers at runtime through your client libraries.
-- **Health checks**: Monitor `/api/health/`—the endpoint reports registry size,
-  cache stats, and telemetry counters so you can detect drift or throttling.
+- **Health checks**: Continue to monitor `/api/health/` even when using an MCP
+  bridge—the endpoint exposes the registry size so you can detect drift.
 - **Dry runs**: Use the Python helpers to lint registry definitions before
   publishing them to a production MCP server.
 
