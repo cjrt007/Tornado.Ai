@@ -84,9 +84,112 @@ export const SecurityToolsCollectionSchema = z.object({
   })
 });
 
+export const FeatureToggleSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  description: z.string(),
+  category: z.enum(['general', 'auth', 'mcp', 'reporting', 'ui', 'observability', 'tools']),
+  enabled: z.boolean(),
+  locked: z.boolean().default(false),
+  requiresRestart: z.boolean().default(false),
+  tags: z.array(z.string()).default([])
+});
+
+export const FeatureTogglePatchSchema = z.object({
+  id: z.string(),
+  enabled: z.boolean().optional(),
+  locked: z.boolean().optional()
+});
+
+export const RoleControlSchema = z.object({
+  role: z.enum(['admin', 'pentester', 'auditor', 'viewer']),
+  displayName: z.string(),
+  description: z.string(),
+  permissions: z.array(z.string()),
+  featureAccess: z.array(z.string()).default([]),
+  defaultLanding: z.string().default('dashboard'),
+  enforcement: z.object({
+    mfaRequired: z.boolean(),
+    sessionTimeoutMinutes: z.number().int().positive()
+  })
+});
+
+export const RoleControlPatchSchema = z.object({
+  role: z.enum(['admin', 'pentester', 'auditor', 'viewer']),
+  permissions: z.array(z.string()).optional(),
+  featureAccess: z.array(z.string()).optional(),
+  defaultLanding: z.string().optional(),
+  enforcement: z
+    .object({
+      mfaRequired: z.boolean().optional(),
+      sessionTimeoutMinutes: z.number().int().positive().optional()
+    })
+    .optional()
+});
+
+export const ScanGuardrailSchema = z.object({
+  approvalsRequired: z.boolean(),
+  approvalsNeeded: z.number().int().min(0).max(5).default(1),
+  safeMode: z.boolean(),
+  maxParallelTasks: z.number().int().positive(),
+  notifyRoles: z.array(z.enum(['admin', 'pentester', 'auditor', 'viewer'])).default([])
+});
+
+export const ScanScheduleSchema = z.object({
+  type: z.enum(['manual', 'scheduled', 'continuous']),
+  cron: z.string().optional(),
+  timezone: z.string().default('UTC'),
+  maintenanceWindow: z
+    .object({
+      start: z.string(),
+      durationMinutes: z.number().int().positive()
+    })
+    .optional()
+});
+
+export const ScanProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.enum(['network', 'webapp', 'cloud', 'binary', 'ctf', 'osint', 'compliance', 'hybrid']),
+  description: z.string(),
+  targets: z.array(z.string()),
+  tooling: z.array(z.string()),
+  parameters: z.record(z.any()).default({}),
+  tags: z.array(z.string()).default([]),
+  schedule: ScanScheduleSchema,
+  guardrails: ScanGuardrailSchema,
+  owner: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export const ScanProfilePatchSchema = z.object({
+  id: z.string(),
+  description: z.string().optional(),
+  targets: z.array(z.string()).optional(),
+  tooling: z.array(z.string()).optional(),
+  parameters: z.record(z.any()).optional(),
+  tags: z.array(z.string()).optional(),
+  schedule: ScanScheduleSchema.partial().optional(),
+  guardrails: ScanGuardrailSchema.partial().optional()
+});
+
+export const ControlSurfaceSchema = z.object({
+  features: z.array(FeatureToggleSchema),
+  roles: z.array(RoleControlSchema),
+  scanProfiles: z.array(ScanProfileSchema)
+});
+
 export type ToolSpec = z.infer<typeof ToolSpecSchema>;
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
 export type SecurityToolsCollection = z.infer<typeof SecurityToolsCollectionSchema>;
+export type FeatureToggle = z.infer<typeof FeatureToggleSchema>;
+export type FeatureTogglePatch = z.infer<typeof FeatureTogglePatchSchema>;
+export type RoleControl = z.infer<typeof RoleControlSchema>;
+export type RoleControlPatch = z.infer<typeof RoleControlPatchSchema>;
+export type ScanProfile = z.infer<typeof ScanProfileSchema>;
+export type ScanProfilePatch = z.infer<typeof ScanProfilePatchSchema>;
+export type ControlSurface = z.infer<typeof ControlSurfaceSchema>;

@@ -212,6 +212,9 @@ pnpm dev          # Start Fastify with hot reload
 pnpm dev:ui       # Start the React development server (ui/ directory)
 ```
 
+The UI proxies API calls to `http://localhost:7700` and surfaces the **Control Center** at
+`http://localhost:3000` for feature flags, role governance, and scan orchestration.
+
 ### Production
 
 ```bash
@@ -260,6 +263,7 @@ pnpm test
 - [Tool Catalog](docs/TOOLS.md)
 - [Checklist System](docs/CHECKLISTS.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
+- [MCP Configuration](docs/MCP.md)
 - [UI Overview](ui/README.md)
 
 ## FAQ
@@ -268,11 +272,17 @@ pnpm test
 Set `DATABASE_TYPE=postgres` and provide `DATABASE_URL`. Run any migration scripts before
 starting the server. For development, leave the defaults to use SQLite.
 
-**Where do I configure role-based access control (RBAC) permissions?**  
+**Where do I configure role-based access control (RBAC) permissions?**
 RBAC policies live in `src/core/policy/rbac.ts`. Update the role-to-permission mappings and
 add new permissions as needed.
 
-**How do I enable Multi-Factor Authentication (MFA)?**  
+**How do I control platform features, role access, and scan blueprints from the UI?**
+Run both `pnpm dev` and `pnpm dev:ui`, then open the Control Center at
+`http://localhost:3000`. The React console reads/writes to the `/api/control` endpoints to
+toggle feature flags, adjust role permissions/MFA policies, and refine scan profiles with
+Nessus-grade scheduling and guardrails.
+
+**How do I enable Multi-Factor Authentication (MFA)?**
 MFA utilities reside in `src/auth/mfa/totp.ts`. Ensure `MFA_ISSUER` is set and expose the MFA
 setup/verification routes from `src/auth/handlers/auth.ts` through your Fastify router.
 

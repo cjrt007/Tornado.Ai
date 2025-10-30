@@ -1,19 +1,21 @@
 # Tornado.ai UI
 
-This directory will host the React + TypeScript frontend powered by Tailwind CSS and Zustand.
-The initial scaffold is pending implementation. Planned features include:
+The Tornado.ai UI is implemented as a Vite + React + TypeScript application styled with Tailwind CSS and powered by Zustand state management. The first milestone focuses on the enterprise control surface for tuning features, roles, and scan orchestration with parity to tools like Nessus and Burp Suite.
 
-- Real-time dashboards powered by the SRTD component family.
-- Tool execution interface with progress visualization (PVT) and vulnerability cards (IVC).
-- Report generation workflows, MFA setup, and checklist management screens.
+## Capabilities
+
+- **Advanced Feature Controls** – Toggle platform capabilities with category grouping, restart indicators, and tag-based filtering.
+- **Role Governance** – Assign permissions, MFA policies, and feature access per persona with instant backend persistence.
+- **Scan Orchestration** – Edit targets, tooling, schedules, and guardrails for every scan profile with live guardrail validation.
+- **Realtime Persistence** – Optimistic updates backed by the REST API exposed at `/api/control`.
 
 ## Getting Started
 
-A Vite + React + TypeScript bootstrap will be added in subsequent iterations. Once ready, run:
+Install dependencies and launch the dev server:
 
 ```bash
-pnpm install
-pnpm dev
+pnpm install # at repository root (workspace aware)
+pnpm dev:ui
 ```
 
-The UI development server will run on `http://localhost:3000`.
+The UI runs on `http://localhost:3000` and proxies API requests to the Fastify backend on `:7700`.
