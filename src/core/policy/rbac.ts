@@ -1,19 +1,32 @@
-const rolePermissions = {
-  admin: ['*'],
+export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
+
+const WILDCARD_PERMISSION = '*' as const;
+type RolePermissions = Permission[] | typeof WILDCARD_PERMISSION;
+
+const ALL_PERMISSIONS: Permission[] = [
+  'execute_tools',
+  'view_reports',
+  'manage_users',
+  'configure_system'
+];
+
+const rolePermissions: Record<string, RolePermissions> = {
+  admin: WILDCARD_PERMISSION,
   pentester: ['execute_tools', 'view_reports'],
   auditor: ['view_reports'],
   viewer: ['view_reports']
-} as const;
+};
 
 export type Role = keyof typeof rolePermissions;
-export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
 
 const expandPermissions = (role: Role): Permission[] => {
   const perms = rolePermissions[role];
-  if (perms.includes('*')) {
-    return ['execute_tools', 'view_reports', 'manage_users', 'configure_system'];
+
+  if (perms === WILDCARD_PERMISSION) {
+    return [...ALL_PERMISSIONS];
   }
-  return perms as Permission[];
+
+  return [...perms];
 };
 
 export const hasPermission = (role: Role, permission: Permission): boolean => {
