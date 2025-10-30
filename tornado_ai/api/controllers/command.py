@@ -13,7 +13,6 @@ from ...core.decision.err import err
 from ...core.observability import telemetry_center
 from ...shared.types import ToolExecutionResult
 from ...tools.adapters import run_dry
-from ...tools.runtime import tool_runtime
 
 AUDIT_PATH = Path("data") / "audit.log.jsonl"
 
@@ -51,7 +50,7 @@ async def execute_command(payload: CommandPayload) -> CommandResponse:
 
     def _produce() -> ToolExecutionResult:
         telemetry_center.increment_counter(f"command.{payload.toolId}.requested")
-        return _annotate_runtime(run_dry(payload.toolId, payload.params))
+        return run_dry(payload.toolId, payload.params)
 
     if payload.useCache:
         cached = scm.resolve(payload.toolId, payload.params, _produce)
@@ -64,9 +63,3 @@ async def execute_command(payload: CommandPayload) -> CommandResponse:
     _write_audit_entry(payload, result)
     fallback = err.fallback_actions(payload.toolId)
     return CommandResponse(result=result, fallbackActions=fallback)
-
-
-def _annotate_runtime(result: ToolExecutionResult) -> ToolExecutionResult:
-    telemetry = dict(result.telemetry)
-    telemetry["runtime"] = tool_runtime.describe().to_dict()
-    return result.model_copy(update={"telemetry": telemetry})

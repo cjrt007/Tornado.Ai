@@ -1,12 +1,9 @@
 """Runtime detection for tool execution environments."""
 from __future__ import annotations
 
-import logging
 import os
 import platform
-import shutil
-import subprocess
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Mapping, Optional
@@ -30,13 +27,8 @@ class RuntimeDescriptor:
         return data
 
 
-_LOGGER = logging.getLogger(__name__)
-
 _KALI_IMAGE = "tornado-ai-kali:latest"
 _KALI_LAUNCHER = "docker compose -f docker/kali/docker-compose.yml up -d"
-_KALI_CONTAINER_NAME = "tornado-ai-kali"
-
-_AUTO_START_ATTEMPTED = False
 
 
 def _read_os_release(path: Path = Path("/etc/os-release")) -> str:
@@ -61,7 +53,7 @@ def detect_kali_runtime(
     system = (platform_system or platform.system()).lower()
     release_blob = os_release if os_release is not None else _read_os_release()
     distro = _parse_os_id(release_blob)
-    environ = env if env is not None else os.environ
+    environ = env or os.environ
 
     override = environ.get("TORNADO_KALI_MODE", "").strip().lower()
     notes: list[str] = []
@@ -81,9 +73,6 @@ def detect_kali_runtime(
             notes.append("Native Kali Linux installation detected; host execution enabled")
         else:
             notes.append("Host supports native execution; Kali container optional")
-
-    if requires_container:
-        _auto_start_if_enabled(environ)
 
     container_image = _KALI_IMAGE if requires_container else None
     launcher = _KALI_LAUNCHER if requires_container else None
@@ -122,83 +111,3 @@ class KaliToolRuntime:
 tool_runtime = KaliToolRuntime()
 
 __all__ = ["RuntimeDescriptor", "detect_kali_runtime", "tool_runtime"]
-
-
-def _auto_start_if_enabled(environ: Mapping[str, str]) -> None:
-    """Start the Kali container when auto-start is enabled."""
-
-    if not _should_auto_start(environ):
-        return
-
-    _ensure_kali_container(environ)
-
-
-def _should_auto_start(environ: Mapping[str, str]) -> bool:
-    flag = environ.get("TORNADO_KALI_AUTOSTART", "1").strip().lower()
-    return flag not in {"0", "false", "no", "off"}
-
-
-def _ensure_kali_container(environ: Mapping[str, str]) -> None:
-    global _AUTO_START_ATTEMPTED
-
-    if _AUTO_START_ATTEMPTED:
-        return
-
-    _AUTO_START_ATTEMPTED = True
-
-    docker_binary = shutil.which("docker")
-    if not docker_binary:
-        _LOGGER.warning(
-            "Docker binary not found; unable to auto-start Kali container. "
-            "Set TORNADO_KALI_AUTOSTART=0 to disable this warning."
-        )
-        return
-
-    if _is_container_running(docker_binary):
-        _LOGGER.debug("Kali container already running; auto-start skipped")
-        return
-
-    compose_cmd = [
-        docker_binary,
-        "compose",
-        "-f",
-        str(Path("docker/kali/docker-compose.yml")),
-        "up",
-        "-d",
-        "--pull",
-        "missing",
-    ]
-
-    try:
-        subprocess.run(
-            compose_cmd,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        _LOGGER.info("Started Kali GUI container via docker compose")
-    except (OSError, subprocess.CalledProcessError) as exc:
-        _LOGGER.error("Failed to start Kali GUI container: %s", exc)
-
-
-def _is_container_running(docker_binary: str) -> bool:
-    ps_cmd = [
-        docker_binary,
-        "ps",
-        "-q",
-        "-f",
-        f"name={_KALI_CONTAINER_NAME}",
-    ]
-
-    try:
-        result = subprocess.run(
-            ps_cmd,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        return bool(result.stdout.strip())
-    except (OSError, subprocess.CalledProcessError):
-        return False

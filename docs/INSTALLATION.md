@@ -10,12 +10,11 @@ a living FAQ for the most common issues.
 1. [Prerequisites](#1-prerequisites)
 2. [Linux Installation Workflow](#2-linux-installation-workflow)
 3. [Windows Installation Workflow](#3-windows-installation-workflow)
-4. [Kali GUI Container (Windows tool runtime)](#4-kali-gui-container-windows-tool-runtime)
-5. [Optional FastAPI Docker Runtime](#5-optional-fastapi-docker-runtime)
-6. [Configuration and Environment Files](#6-configuration-and-environment-files)
-7. [Post-Installation Validation](#7-post-installation-validation)
-8. [Frequently Asked Questions](#8-frequently-asked-questions)
-9. [Next Steps](#9-next-steps)
+4. [Optional Docker Installation](#4-optional-docker-installation)
+5. [Configuration and Environment Files](#5-configuration-and-environment-files)
+6. [Post-Installation Validation](#6-post-installation-validation)
+7. [Frequently Asked Questions](#7-frequently-asked-questions)
+8. [Next Steps](#8-next-steps)
 
 ## 1. Prerequisites
 
@@ -28,13 +27,10 @@ a living FAQ for the most common issues.
 ### Software Requirements
 
 - Python **3.11** or newer.
-- Node.js **18** or newer (for running Vitest decision-engine coverage).
 - Git (for cloning the repository and tracking updates).
 - Internet access for downloading Python packages and static assets.
 - (Optional) SQLite 3.39+ if you intend to persist cached MCP datasets.
 - (Optional) Docker Engine 24+ if you prefer containerised execution.
-- (Required on Windows) Docker Desktop 4.27+ with virtualization enabled to run
-  the Kali GUI workspace.
 
 ### Accounts & Permissions
 
@@ -151,76 +147,17 @@ nssm set TornadoAI AppDirectory "$PWD"
 nssm set TornadoAI AppEnvironmentExtra "TORNADO_SERVER_HOST=0.0.0.0" "TORNADO_SERVER_PORT=8000" "TORNADO_LOG_LEVEL=INFO"
 ```
 
-## 4. Kali GUI Container (Windows tool runtime)
+## 4. Optional Docker Installation
 
-The runtime detector automatically routes tool execution through a Kali GUI
-container on Windows hosts. Linux and native Kali installations run tools
-directly on the host.
+Docker provides an isolated runtime without touching the host Python toolchain.
 
-### 4.1 Requirements
-
-- Windows 10/11 with Hyper-V or WSL2 virtualization enabled.
-- Docker Desktop 4.27+ with the “Use the WSL 2 based engine” option.
-- Remote Desktop Protocol (RDP) client access to connect to the Kali desktop.
-
-### 4.2 Automatic start-up behaviour
-
-When Tornado.ai detects a Windows host it automatically executes
-`docker compose -f docker/kali/docker-compose.yml up -d --pull missing` during
-the first runtime check to ensure the Kali GUI container is running. Manual
-startup is still available when you want to inspect logs or rebuild the image:
-
-```powershell
-cd docker\kali
-docker compose up -d
-```
-
-The compose profile builds `tornado-ai-kali:latest`, installs XFCE + XRDP, and
-mounts `../data` into `/workspace/data` so the API and GUI environments can
-exchange findings.
-
-### 4.3 Connect via Remote Desktop
-
-- Server: `localhost`
-- Port: `3390`
-- Username: `kali`
-- Password: `kali` (override with the `KALI_PASSWORD` environment variable)
-
-When Tornado.ai executes a tool, the command response contains telemetry noting
-that the Kali container satisfied execution requirements
-(`result.telemetry.runtime.requiresContainer == true`).
-
-### 4.4 Shut down the workspace
-
-```powershell
-docker compose down
-```
-
-Use `docker compose logs -f` for troubleshooting startup issues or verifying GUI
-services.
-
-### 4.5 Overrides and advanced usage
-
-- Export `TORNADO_KALI_MODE=force-host` to bypass the container (useful for CI).
-- Export `TORNADO_KALI_MODE=force-container` when testing the Windows workflow
-  on Linux via Docker Desktop or WSL2.
-- Export `TORNADO_KALI_AUTOSTART=0` to disable automatic container launch and
-  manage the lifecycle manually.
-- Customize credentials or shared paths by editing
-  [`docker/kali/docker-compose.yml`](../docker/kali/docker-compose.yml).
-
-## 5. Optional FastAPI Docker Runtime
-
-Docker provides an isolated runtime for the FastAPI service without touching the
-host Python toolchain.
-
-### 5.1 Build the Image
+### 4.1 Build the Image
 
 ```bash
 docker build -t tornado-ai .
 ```
 
-### 5.2 Run the Container
+### 4.2 Run the Container
 
 ```bash
 docker run --rm -p 8000:8000 --env-file .env tornado-ai
@@ -235,7 +172,7 @@ docker run --rm -it -p 8000:8000 -v "$(pwd)":/app \
   uvicorn tornado_ai.server:app --host 0.0.0.0 --reload
 ```
 
-### 5.3 Updating Dependencies
+### 4.3 Updating Dependencies
 
 Rebuild the image whenever `pyproject.toml` changes:
 
@@ -243,9 +180,9 @@ Rebuild the image whenever `pyproject.toml` changes:
 docker build --pull --no-cache -t tornado-ai .
 ```
 
-## 6. Configuration and Environment Files
+## 5. Configuration and Environment Files
 
-### 6.1 Base `.env` Template
+### 5.1 Base `.env` Template
 
 Create `.env` in the repository root. The service automatically loads it:
 
@@ -269,34 +206,25 @@ TORNADO_LOG_LEVEL=INFO
 '@ | Out-File -FilePath .env -Encoding utf8
 ```
 
-### 6.2 Additional Tweaks
+### 5.2 Additional Tweaks
 
 - Set `TORNADO_SERVER_CORS=false` to disable cross-origin requests entirely.
 - Adjust `TORNADO_SERVER_PORT` if port 8000 is already in use.
 - Use `TORNADO_LOG_LEVEL=DEBUG` when diagnosing API or registry issues.
 
-## 7. Post-Installation Validation
+## 6. Post-Installation Validation
 
 Run through the following checks to confirm the deployment:
 
 1. `pytest` succeeds without failures.
-2. Install and execute the Vitest suite:
-   ```bash
-   cd ui
-   npm install
-   npm test
-   ```
-3. `curl http://localhost:8000/api/health/` returns a JSON payload containing the
-   MCP registry summary, cache stats, and telemetry counters.
-4. Visiting `http://localhost:8000/console` renders the advanced UI with feature
+2. `curl http://localhost:8000/api/health/` returns a JSON payload containing
+   the MCP registry summary.
+3. Visiting `http://localhost:8000/console` renders the advanced UI with feature
    toggles, role controls, and scan profiles.
-5. Mutating a feature/role/scan via the UI produces entries in the in-memory
+4. Mutating a feature/role/scan via the UI produces entries in the in-memory
    activity feed (visible in the console).
-6. Invoke a dry-run tool via `curl -X POST http://localhost:8000/api/command/`
-   (see [`docs/API.md`](API.md#command-endpoints)) and confirm the response
-   includes `"runtime": {"requires_container": false|true}`.
 
-## 8. Frequently Asked Questions
+## 7. Frequently Asked Questions
 
 | Symptom | Resolution |
 | --- | --- |
@@ -306,10 +234,8 @@ Run through the following checks to confirm the deployment:
 | Native dependency build failures on Windows | Install Visual Studio Build Tools and re-run `pip install -e .[dev]`. |
 | Uvicorn cannot bind to port 8000 | Change `TORNADO_SERVER_PORT` in `.env` or free the occupied port. |
 | Docker container exits immediately | Confirm the `.env` file is mounted or baked into the image and that the port mapping is valid. |
-| Unable to RDP into the Kali container | Ensure the compose stack is running (`docker compose ps`) and that port `3390` is open in Windows Firewall. |
-| Telemetry shows `requiresContainer=false` on Windows | Verify Docker Desktop is running and that `TORNADO_KALI_MODE` is not set to `force-host`. |
 
-## 9. Next Steps
+## 8. Next Steps
 
 - Review [`docs/API.md`](API.md) for payload contracts.
 - Configure MCP integrations via [`docs/MCP.md`](MCP.md).

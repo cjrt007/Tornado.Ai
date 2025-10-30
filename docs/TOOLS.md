@@ -39,9 +39,6 @@ Each definition includes:
 - `estimatedDuration` — expected runtime in seconds.
 - `decision_weight` and `cvss_bias` — hints consumed by TSA during tool
   selection.
-- Runtime policy decisions are reported back through
-  `ToolExecutionResult.telemetry.runtime`; Windows hosts automatically leverage
-  the Kali GUI container described in the [README runtime recap](../README.md#runtime-policy-recap).
 
 Extend the runnable inventory by appending to
 `tornado_ai.tools.definitions.ToolDefinition`, registering a dry-run adapter in
