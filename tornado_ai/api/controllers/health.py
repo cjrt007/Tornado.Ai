@@ -14,6 +14,9 @@ from ...tools.registry import tool_registry
 class HealthResponse:
     status: str
     registrySize: int
+    cacheStats: dict
+    telemetryCounters: dict
+    toolCategories: dict
     lastAuditEvent: str | None = None
     cacheStats: dict
     telemetryCounters: dict
