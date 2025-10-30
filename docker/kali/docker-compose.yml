@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  kali-gui:
+    build:
+      context: ..
+      dockerfile: docker/kali/Dockerfile
+    image: tornado-ai-kali:latest
+    container_name: tornado-ai-kali
+    environment:
+      - KALI_USER=${KALI_USER:-kali}
+      - KALI_PASSWORD=${KALI_PASSWORD:-kali}
+    ports:
+      - "3390:3389"
+    volumes:
+      - ../data:/workspace/data
+    shm_size: "2g"
+    restart: unless-stopped

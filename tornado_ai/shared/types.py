@@ -1,7 +1,7 @@
 """Pydantic models that mirror the original TypeScript schemas."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, Iterable, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,16 +15,153 @@ PermissionLiteral = Literal[
 ]
 
 
+ToolCategoryLiteral = Literal["network", "webapp", "cloud", "binary", "ctf", "osint"]
+
+
 class ToolSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    category: Literal["network", "webapp", "cloud", "binary", "ctf", "osint", "compliance", "hybrid"]
+    category: ToolCategoryLiteral
     summary: str
     inputSchema: Dict[str, Any]
     outputSchema: Optional[Dict[str, Any]] = None
     requiredPermissions: List[str]
     estimatedDuration: int
+
+
+class TargetProfile(BaseModel):
+    """Description of the asset the assistant is evaluating."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    targetId: str
+    assetKind: Literal[
+        "webapp",
+        "api",
+        "mobile",
+        "cloud",
+        "infrastructure",
+        "binary",
+        "iot",
+    ]
+    environment: Literal["production", "staging", "development", "lab"]
+    cvss: float = Field(ge=0.0, le=10.0)
+    criticality: Literal["low", "medium", "high"]
+    tags: List[str] = Field(default_factory=list)
+    description: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class PriorToolResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    toolId: str
+    success: bool
+    findings: List[str] = Field(default_factory=list)
+    severity: Literal["none", "low", "medium", "high", "critical"] = "none"
+    durationSeconds: Optional[int] = None
+    timestamp: Optional[str] = None
+
+
+class ToolPlanStep(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    toolId: str
+    rationale: str
+    score: float
+    category: ToolCategoryLiteral
+    prerequisites: List[str] = Field(default_factory=list)
+
+
+class ToolPlan(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    targetId: str
+    steps: List[ToolPlanStep]
+    summary: str
+
+
+class ParameterSuggestion(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    toolId: str
+    suggestedParams: Dict[str, Any]
+    rationale: str
+
+
+class AttackPathNode(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    label: str
+    phase: Literal["recon", "weaponize", "deliver", "exploit", "maintain"]
+    likelihood: float = Field(ge=0.0, le=1.0)
+
+
+class AttackPathEdge(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source: str
+    target: str
+    description: str
+
+
+class AttackGraph(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    targetId: str
+    nodes: List[AttackPathNode]
+    edges: List[AttackPathEdge]
+
+
+class ToolExecutionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    toolId: str
+    status: Literal["queued", "running", "completed", "errored", "cached"]
+    output: Dict[str, Any]
+    cached: bool = False
+    telemetry: Dict[str, Any] = Field(default_factory=dict)
+
+
+ProcessStatusLiteral = Literal["queued", "running", "completed", "errored", "terminated"]
+
+
+class ProcessRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    name: str
+    engine: Literal["APME", "AAAM", "IBA", "SCAA", "ICMDA", "AEGDEM"]
+    status: ProcessStatusLiteral
+    progress: float = Field(ge=0.0, le=100.0)
+    createdAt: str
+    updatedAt: str
+    owner: str = "system"
+    tags: List[str] = Field(default_factory=list)
+
+
+class DashboardCard(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    title: str
+    description: str
+    value: Any
+    severity: Literal["info", "success", "warning", "danger"] = "info"
+
+
+class VulnerabilityCard(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    name: str
+    cve: Optional[str]
+    cvss: float = Field(ge=0.0, le=10.0)
+    summary: str
+    remediation: Iterable[str]
+    references: Iterable[str]
 
 
 class ToolCall(BaseModel):
@@ -79,6 +216,27 @@ class ChecklistItem(BaseModel):
     notes: str
     testedBy: str
     testedDate: Optional[str] = None
+
+
+class ChecklistEntryTemplate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    title: str
+    category: str
+    description: str
+    severity: Literal["critical", "high", "medium", "low", "info"]
+    references: List[str] = Field(default_factory=list)
+
+
+class ChecklistTemplate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    name: str
+    source: str
+    domain: Literal["web", "mobile"]
+    items: List[ChecklistEntryTemplate]
 
 
 class ToolDescriptor(BaseModel):

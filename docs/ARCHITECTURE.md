@@ -1,53 +1,82 @@
 # Tornado.ai Architecture Overview
 
-The Python port of Tornado.ai keeps the original domain concepts while swapping
-the delivery layer to FastAPI and Pydantic. The codebase is organized around a
-clean separation between data models, stateful domain services, and HTTP
-adapters.
+The Python edition of Tornado.ai layers an autonomous security-assessment stack
+on top of FastAPI and Pydantic. The runtime is split into focused domains that
+cooperate through well-typed interfaces so MCP-compatible agents can reason
+about every step in the workflow.
 
 ## Core Building Blocks
 
-- **Control Center** – `tornado_ai.core.control.center.ControlCenter` manages the
-  in-memory feature toggles, RBAC roles, and scan profiles. Mutations are
-  validated with Pydantic models before they are applied.
-- **RBAC Policy** – `tornado_ai.core.policy.rbac` provides helper utilities for
-  expanding wildcard permissions and calculating enforcement metadata used by
-  the control center.
-- **Cache** – `tornado_ai.core.cache` implements a content-addressable cache for
-  simulated tool runs and other expensive lookups.
-- **Audit Status** – `tornado_ai.core.audit.status` offers lightweight helpers
-  for producing timestamps and metadata that feed the health endpoint.
-- **Tool Catalog** – `tornado_ai.tools.catalog` and
-  `tornado_ai.tools.definitions` capture the curated catalog and simulated MCP
-  registry definitions used throughout the application.
+- **Control Center** – `tornado_ai.core.control.center.ControlCenter` keeps the
+  feature toggles, RBAC roles, and scan profiles that mirror the original TypeScript
+  implementation.
+- **RBAC Policy** – `tornado_ai.core.policy.rbac` expands wildcard permissions
+  and enforces guardrails for each persona.
+- **Smart Caching Manager (SCM)** – `tornado_ai.core.cache.manager.scm` wraps a
+  TTL + LRU content-addressed cache to deduplicate tool executions and expose
+  hit/miss telemetry.
+- **Tool Runtime Policy** – `tornado_ai.tools.runtime.tool_runtime` inspects the
+  host OS/distribution and decides whether the Kali GUI container must be used
+  for tool execution. On Windows it also auto-starts the container (unless
+  `TORNADO_KALI_AUTOSTART=0` is set) and surfaces the decision through command
+  telemetry (see the README runtime recap).
+- **Tool Registry** – `tornado_ai.tools.registry.tool_registry` centralizes tool
+  definitions, dry-run adapters, and MCP schema exports used by ASME and the MCP
+  server.
+- **Audit Log** – `tornado_ai.core.audit.status` parses the JSONL audit history
+  maintained by the command surface.
+
+## Decision Intelligence
+
+- **AIDE – Advanced Intelligent Decision Engine** (`tornado_ai.core.decision.aide`)
+  orchestrates the intelligence pipeline and returns a combined tool plan,
+  attack graph, and concurrency recommendation.
+- **TSA – Tool Selection Assistant** (`tornado_ai.core.decision.tsa`) scores
+  tools using CVSS-derived multipliers, asset context, and curated weights.
+- **IPO – Intelligent Parameter Optimizer** (`tornado_ai.core.decision.ipo`)
+  adds environment-aware guardrails such as rate limiting and severity filters.
+- **SACD – Smart Attack Chain Discovery** (`tornado_ai.core.decision.sacd`)
+  produces hypothetical kill-chain graphs so LLM agents can explain their plans.
+- **ROE & ERR** (`tornado_ai.core.decision.roe` / `tornado_ai.core.decision.err`)
+  provide resource tuning guidance and fallback actions when tools fail.
+- **AAAM / IBA / SCAA / ICMDA / AEGDEM** surface as seeded synthetic processes
+  via `tornado_ai.core.processes.manager` to demonstrate orchestration states.
+
+## Observability & Visualization
+
+- **AVE & SRTD** – `tornado_ai.core.observability.telemetry` tracks counters,
+  histograms, and spans; the `/api/telemetry` endpoint exposes these datasets.
+- **PVT & IVC** – `tornado_ai.api.controllers.viz` builds dashboard cards and
+  vulnerability briefs for consumption by downstream UIs.
+- **Structured Logging** – `tornado_ai.core.metrics.logger.JsonFormatter` emits
+  JSON logs compatible with log shippers and SIEM pipelines.
 
 ## HTTP Layer
 
-- `tornado_ai.api.routes` wires FastAPI routers for health reporting and control
-  surface mutations.
-- `tornado_ai.api.controllers` contains request handlers that mediate between
-  HTTP requests and the domain services.
-- `tornado_ai.server` bootstraps the FastAPI application, configures structured
-  logging, and registers startup hooks.
+Routers in `tornado_ai.api.routes` group endpoints by capability: health,
+intelligence, command execution, telemetry, caching, process management,
+visualization, checklists, and control surface management. Controllers are thin
+wrappers that translate HTTP payloads into calls to the core services.
 
 ## Configuration & Environment
 
-Runtime configuration is supplied via `tornado_ai.config`, which reads from
-environment variables (with sensible defaults) and produces typed settings
-objects. `python-dotenv` can be used locally to load values from a `.env` file.
+Typed configuration lives in `tornado_ai.config`. Environment variables control
+server binding, logging verbosity, and can be extended to tune cache TTLs or
+future persistence hooks. Local development can rely on `.env` files via
+`python-dotenv`.
 
 ## Data Flow
 
-1. Incoming requests enter the FastAPI router layer (`/api`).
-2. Controllers delegate to domain services such as the control center or tool
-   catalog.
-3. Domain services validate incoming payloads with shared Pydantic models and
-   apply mutations to the in-memory state.
-4. Responses return the updated `ControlSurface` or health metadata to clients.
+1. API requests enter the FastAPI router layer under `/api`.
+2. Controllers dispatch to decision engines, the control center, or the tool
+   registry.
+3. Domain services validate input with `tornado_ai.shared.types` models and
+   record telemetry or cache entries as needed.
+4. Responses return structured objects (plans, graphs, dashboards, checklists)
+   that LLM agents or human operators can consume.
 
 ## Future Enhancements
 
-- Expose the MCP registry over HTTP/WebSocket once the transport adapters are
-  reintroduced.
-- Persist control-center state to disk or a backing store.
-- Rebuild the interactive UI against the new Python API surface.
+- Wire the MCP transport so agents can call tools over WebSocket.
+- Persist process telemetry to a datastore for historical analytics.
+- Surface real tool adapters in place of the dry-run simulations.

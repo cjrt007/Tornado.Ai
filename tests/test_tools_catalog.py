@@ -1,4 +1,5 @@
 from tornado_ai.shared.types import SecurityToolsCollection
+from tornado_ai.shared.types import SecurityToolsCollection
 from tornado_ai.tools.catalog import security_tools_collection
 
 
