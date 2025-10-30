@@ -1,19 +1,28 @@
+export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
+type RolePermissions = Permission[] | '*';
+
+const ALL_PERMISSIONS: Permission[] = [
+  'execute_tools',
+  'view_reports',
+  'manage_users',
+  'configure_system'
+];
+
 const rolePermissions = {
-  admin: ['*'],
+  admin: '*',
   pentester: ['execute_tools', 'view_reports'],
   auditor: ['view_reports'],
   viewer: ['view_reports']
-} as const;
+} as const satisfies Record<string, RolePermissions>;
 
 export type Role = keyof typeof rolePermissions;
-export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
-
 const expandPermissions = (role: Role): Permission[] => {
   const perms = rolePermissions[role];
-  if (perms.includes('*')) {
-    return ['execute_tools', 'view_reports', 'manage_users', 'configure_system'];
+  if (perms === '*') {
+    return [...ALL_PERMISSIONS];
   }
-  return perms as Permission[];
+
+  return [...perms];
 };
 
 export const hasPermission = (role: Role, permission: Permission): boolean => {
