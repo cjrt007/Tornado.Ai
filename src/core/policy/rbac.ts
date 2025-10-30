@@ -1,6 +1,5 @@
 export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
-type PermissionOrWildcard = Permission | '*';
-type RolePermissions = readonly PermissionOrWildcard[];
+type RolePermissions = Permission[] | '*';
 
 const ALL_PERMISSIONS: Permission[] = [
   'execute_tools',
@@ -10,22 +9,16 @@ const ALL_PERMISSIONS: Permission[] = [
 ];
 
 const rolePermissions = {
-  admin: ['*'],
+  admin: '*',
   pentester: ['execute_tools', 'view_reports'],
   auditor: ['view_reports'],
   viewer: ['view_reports']
 } as const satisfies Record<string, RolePermissions>;
 
 export type Role = keyof typeof rolePermissions;
-type RolePermission = (typeof rolePermissions)[Role];
-
-const hasWildcard = (perms: RolePermission): perms is readonly ['*'] => {
-  return perms.length === 1 && perms[0] === '*';
-};
-
 const expandPermissions = (role: Role): Permission[] => {
   const perms = rolePermissions[role];
-  if (hasWildcard(perms)) {
+  if (perms === '*') {
     return [...ALL_PERMISSIONS];
   }
 

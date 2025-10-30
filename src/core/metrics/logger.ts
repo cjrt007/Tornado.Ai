@@ -1,4 +1,5 @@
-import type { FastifyServerOptions } from 'fastify';
+import pino, { type LoggerOptions } from 'pino';
+import type { FastifyBaseLogger } from 'fastify';
 
 import type { AppConfig } from '../../config/index.js';
 
@@ -23,15 +24,23 @@ const toFastifyLoggerConfig = (options: LoggerConfigShape): FastifyLoggerConfig 
 export const createLogger = (logging: LoggingConfig): FastifyLoggerConfig => {
   const baseConfig: LoggerConfigShape = { level: logging.level };
 
-  if (logging.pretty) {
-    baseConfig.transport = {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'SYS:standard'
-      }
-    };
-  }
+const buildPino = pino as unknown as (options: LoggerOptions) => FastifyBaseLogger;
 
-  return toFastifyLoggerConfig(baseConfig);
+export const createLogger = (logging: LoggingConfig): FastifyBaseLogger => {
+  const options: LoggerOptions = {
+    level: logging.level,
+    ...(logging.pretty
+      ? {
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              translateTime: 'SYS:standard'
+            }
+          }
+        }
+      : {})
+  };
+
+  return buildPino(options);
 };
