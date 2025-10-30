@@ -1,40 +1,39 @@
 # Tornado.ai API Overview
 
-| Method | Path                                | Description                                   |
-| ------ | ----------------------------------- | --------------------------------------------- |
-| POST   | /api/auth/register                  | Register a new user account                   |
-| POST   | /api/auth/login                     | Authenticate and obtain JWT                   |
-| POST   | /api/auth/logout                    | Invalidate current session                    |
-| POST   | /api/auth/mfa/setup                 | Begin MFA setup flow                          |
-| POST   | /api/auth/mfa/verify                | Verify MFA token                              |
-| POST   | /api/auth/mfa/disable               | Disable MFA for current user                  |
-| GET    | /api/auth/me                        | Retrieve authenticated user profile           |
-| GET    | /health                             | Service health check                          |
-| POST   | /api/intelligence/analyze-target    | Analyze target and build plan                 |
-| POST   | /api/intelligence/select-tools      | Generate recommended tool plan                |
-| POST   | /api/intelligence/optimize-parameters | Optimize tool parameters                     |
-| POST   | /api/command                        | Execute a tool with approval context          |
-| GET    | /api/telemetry                      | Fetch counters and histograms                 |
-| GET    | /api/cache/stats                    | Cache metrics                                  |
-| GET    | /api/processes/list                 | List execution processes                       |
-| GET    | /api/processes/status/:id           | Inspect process status                         |
-| POST   | /api/processes/terminate/:id        | Terminate process                              |
-| GET    | /api/viz/dashboard                  | Dashboard data                                 |
-| GET    | /api/viz/vuln-card/:id              | Vulnerability card detail                      |
-| GET    | /api/checklists                     | List checklists                                |
-| POST   | /api/checklists                     | Create checklist                               |
-| GET    | /api/checklists/:id                 | Retrieve checklist                             |
-| PUT    | /api/checklists/:id                 | Update checklist                               |
-| DELETE | /api/checklists/:id                 | Delete checklist                               |
-| POST   | /api/checklists/:id/import          | Import CSV checklist                           |
-| GET    | /api/checklists/:id/export          | Export checklist                               |
-| PATCH  | /api/checklists/:id/items/:itemId   | Update checklist item                          |
-| GET    | /api/reports                        | List generated reports                         |
-| POST   | /api/reports/generate               | Generate report                                |
-| GET    | /api/reports/:id                    | Download report                                |
-| DELETE | /api/reports/:id                    | Delete report                                  |
-| GET    | /api/users                          | List users (admin)                             |
-| POST   | /api/users                          | Create user (admin)                            |
-| GET    | /api/users/:id                      | Get user (admin)                               |
-| PUT    | /api/users/:id                      | Update user (admin)                            |
-| DELETE | /api/users/:id                      | Delete user (admin)                            |
+The Python FastAPI service exposes a compact REST surface that mirrors the
+control-center capabilities from the legacy TypeScript implementation. All
+responses are JSON payloads generated from Pydantic models in
+`tornado_ai.shared.types`.
+
+| Method | Path                     | Description                                              |
+| ------ | ------------------------ | -------------------------------------------------------- |
+| GET    | `/api/health/`           | Report service status, control snapshot metadata, and tool counts |
+| GET    | `/api/control/`          | Retrieve the full control surface (features, roles, scan profiles) |
+| POST   | `/api/control/features`  | Apply one or more feature toggle mutations               |
+| POST   | `/api/control/roles`     | Apply role definition mutations                          |
+| POST   | `/api/control/scans`     | Apply scan profile mutations                             |
+
+## Payloads
+
+- **Feature mutations** expect a body that conforms to
+  `FeatureTogglePatchCollection` from `tornado_ai.shared.types`.
+- **Role mutations** accept `RoleControlPatchCollection` payloads.
+- **Scan mutations** accept `ScanProfilePatchCollection` payloads.
+
+See `tornado_ai/api/controllers/control.py` for the orchestrating logic. Each
+endpoint returns the updated `ControlSurface` representation so clients can
+render the latest state without issuing a follow-up `GET` request.
+
+## Error Handling
+
+Validation errors raised by Pydantic are automatically converted to FastAPI
+responses with status code `422` and a `detail` array describing the failing
+fields. Domain-level validation errors re-use the same mechanism by raising
+`ValidationError` instances from the control-center manager.
+
+## Versioning
+
+The service currently ships as a single versioned application (no explicit API
+version prefix). Backwards-incompatible changes are announced in the changelog
+and reflected in the shared type models. Clients should pin against a specific
+Git revision or release tag if stability is required.
