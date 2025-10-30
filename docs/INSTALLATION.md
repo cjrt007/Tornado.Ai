@@ -1,28 +1,57 @@
-# Installation Guide
+# Installation & Operations Guide
 
-This guide provides step-by-step installation and configuration instructions for
-Linux and Windows environments, including recommended packages, environment
-variables, and sanity checks. Use it alongside the README for a high-level
-overview.
+This guide provides a comprehensive walk-through for preparing Tornado.ai on
+Linux, Windows, and Docker-based environments. It expands on the README with
+mandatory prerequisites, detailed configuration steps, validation commands, and
+a living FAQ for the most common issues.
 
-## 1. System Requirements
+## Table of Contents
 
-- Python 3.11+
-- Git
-- Internet access for dependency downloads
-- (Optional) SQLite 3.39+ for persistent caching of MCP datasets
-- (Optional) Build tooling (`build-essential` on Debian/Ubuntu or
-  `Visual Studio Build Tools` on Windows) when compiling heavy native
-  dependencies
+1. [Prerequisites](#1-prerequisites)
+2. [Linux Installation Workflow](#2-linux-installation-workflow)
+3. [Windows Installation Workflow](#3-windows-installation-workflow)
+4. [Optional Docker Installation](#4-optional-docker-installation)
+5. [Configuration and Environment Files](#5-configuration-and-environment-files)
+6. [Post-Installation Validation](#6-post-installation-validation)
+7. [Frequently Asked Questions](#7-frequently-asked-questions)
+8. [Next Steps](#8-next-steps)
 
-## 2. Linux Setup
+## 1. Prerequisites
 
-### 2.1 Install System Dependencies
+### Hardware & Operating System
+
+- 4 CPU cores and 8 GB RAM are recommended for comfortable local development.
+- 2 GB of available disk space for the Python virtual environment and cache.
+- Linux (Ubuntu 22.04+ or equivalent), macOS 13+, or Windows 11/10.
+
+### Software Requirements
+
+- Python **3.11** or newer.
+- Node.js **18** or newer (for running Vitest decision-engine coverage).
+- Git (for cloning the repository and tracking updates).
+- Internet access for downloading Python packages and static assets.
+- (Optional) SQLite 3.39+ if you intend to persist cached MCP datasets.
+- (Optional) Docker Engine 24+ if you prefer containerised execution.
+
+### Accounts & Permissions
+
+- Ability to install system packages (`sudo` on Linux, Administrator on
+  Windows).
+- Firewall permission to open TCP port `8000` (or the port you configure).
+
+## 2. Linux Installation Workflow
+
+### 2.1 Install System Packages
+
+Debian/Ubuntu example:
 
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-venv python3-pip git build-essential libsqlite3-dev
 ```
+
+> Fedora/RHEL users should replace `apt` with `dnf` and install the analogous
+> packages (`python3`, `python3-virtualenv`, `git`, `gcc`, `sqlite-devel`).
 
 ### 2.2 Clone and Bootstrap the Project
 
@@ -36,75 +65,18 @@ pip install -e .[dev]
 pytest
 ```
 
-### 2.3 Runtime Configuration
-
-Create `.env` in the repository root (the FastAPI app loads it automatically):
-
-```bash
-cat <<'ENV' > .env
-TORNADO_SERVER_HOST=0.0.0.0
-TORNADO_SERVER_PORT=8000
-TORNADO_SERVER_CORS=true
-TORNADO_LOG_LEVEL=INFO
-ENV
-```
-
-Start the service:
+### 2.3 Launch the Development Server
 
 ```bash
 uvicorn tornado_ai.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Visit `http://localhost:8000/console` for the advanced control surface.
+Browse to `http://localhost:8000/console` for the advanced control surface. Use
+`CTRL+C` to stop the server.
 
-## 3. Windows Setup
+### 2.4 Optional: System Service
 
-### 3.1 Install Python and Git
-
-- Install **Python 3.11** from the Microsoft Store or python.org (ensure
-  "Add Python to PATH" is checked).
-- Install **Git for Windows**.
-- Optionally install **Visual Studio Build Tools** with the C++ workload to
-  build native wheels when required.
-
-### 3.2 Bootstrap the Repository
-
-```powershell
-cd $HOME\Desktop
-git clone https://github.com/your-org/Tornado.Ai.git
-cd Tornado.Ai
-py -3.11 -m venv .venv
-.\.venv\Scripts\activate
-python -m pip install --upgrade pip
-pip install -e .[dev]
-pytest
-```
-
-### 3.3 Configure Environment Variables
-
-Create `.env` (PowerShell):
-
-```powershell
-@'
-TORNADO_SERVER_HOST=0.0.0.0
-TORNADO_SERVER_PORT=8000
-TORNADO_SERVER_CORS=true
-TORNADO_LOG_LEVEL=INFO
-'@ | Out-File -FilePath .env -Encoding utf8
-```
-
-Run the server:
-
-```powershell
-uvicorn tornado_ai.server:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Navigate to `http://localhost:8000/console` to manage features, roles, and scan
-profiles.
-
-## 4. Optional: Service Mode Deployment
-
-For production, run behind a hardened ASGI server and process supervisor:
+For production-style deployments, adapt the following systemd unit:
 
 ```ini
 # /etc/systemd/system/tornado-ai.service
@@ -124,32 +96,155 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-Enable and start:
+Reload and enable the unit with:
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now tornado-ai
 ```
 
-## 5. Post-Installation Validation
+## 3. Windows Installation Workflow
 
-- `pytest` passes without failures.
-- `curl http://localhost:8000/api/health/` returns a JSON payload containing the
-  MCP registry summary.
-- Browsing to `/console` renders the advanced UI and displays feature toggles.
-- Updating a feature/role/scan via the UI results in activity feed entries.
+### 3.1 Install Python, Git, and Build Tooling
 
-## 6. Troubleshooting
+1. Install **Python 3.11** from [python.org](https://www.python.org/downloads/)
+   or the Microsoft Store. Ensure “Add Python to PATH” is checked.
+2. Install **Git for Windows**.
+3. (Optional) Install **Visual Studio Build Tools** with the C++ workload to
+   compile native wheels when required.
+
+### 3.2 Clone and Bootstrap the Project
+
+Open *PowerShell* and run:
+
+```powershell
+cd $HOME\Desktop
+git clone https://github.com/your-org/Tornado.Ai.git
+cd Tornado.Ai
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -e .[dev]
+pytest
+```
+
+### 3.3 Launch the Development Server
+
+```powershell
+uvicorn tornado_ai.server:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Open `http://localhost:8000/console` in your browser to access the control
+surface. Close the server with `Ctrl+C`.
+
+### 3.4 Optional: Windows Service Mode
+
+To run Tornado.ai as a background service on Windows, use NSSM (Non-Sucking
+Service Manager):
+
+```powershell
+nssm install TornadoAI "$PWD\.venv\Scripts\uvicorn.exe" "tornado_ai.server:app" --host 0.0.0.0 --port 8000
+nssm set TornadoAI AppDirectory "$PWD"
+nssm set TornadoAI AppEnvironmentExtra "TORNADO_SERVER_HOST=0.0.0.0" "TORNADO_SERVER_PORT=8000" "TORNADO_LOG_LEVEL=INFO"
+```
+
+## 4. Optional Docker Installation
+
+Docker provides an isolated runtime without touching the host Python toolchain.
+
+### 4.1 Build the Image
+
+```bash
+docker build -t tornado-ai .
+```
+
+### 4.2 Run the Container
+
+```bash
+docker run --rm -p 8000:8000 --env-file .env tornado-ai
+```
+
+This uses the `.env` file from the project root for configuration. To iterate on
+code without rebuilding the image, mount the repository and enable reload mode:
+
+```bash
+docker run --rm -it -p 8000:8000 -v "$(pwd)":/app \
+  --env-file .env tornado-ai \
+  uvicorn tornado_ai.server:app --host 0.0.0.0 --reload
+```
+
+### 4.3 Updating Dependencies
+
+Rebuild the image whenever `pyproject.toml` changes:
+
+```bash
+docker build --pull --no-cache -t tornado-ai .
+```
+
+## 5. Configuration and Environment Files
+
+### 5.1 Base `.env` Template
+
+Create `.env` in the repository root. The service automatically loads it:
+
+```bash
+cat <<'ENV' > .env
+TORNADO_SERVER_HOST=0.0.0.0
+TORNADO_SERVER_PORT=8000
+TORNADO_SERVER_CORS=true
+TORNADO_LOG_LEVEL=INFO
+ENV
+```
+
+PowerShell equivalent:
+
+```powershell
+@'
+TORNADO_SERVER_HOST=0.0.0.0
+TORNADO_SERVER_PORT=8000
+TORNADO_SERVER_CORS=true
+TORNADO_LOG_LEVEL=INFO
+'@ | Out-File -FilePath .env -Encoding utf8
+```
+
+### 5.2 Additional Tweaks
+
+- Set `TORNADO_SERVER_CORS=false` to disable cross-origin requests entirely.
+- Adjust `TORNADO_SERVER_PORT` if port 8000 is already in use.
+- Use `TORNADO_LOG_LEVEL=DEBUG` when diagnosing API or registry issues.
+
+## 6. Post-Installation Validation
+
+Run through the following checks to confirm the deployment:
+
+1. `pytest` succeeds without failures.
+2. Install and execute the Vitest suite:
+   ```bash
+   cd ui
+   npm install
+   npm test
+   ```
+3. `curl http://localhost:8000/api/health/` returns a JSON payload containing the
+   MCP registry summary, cache stats, and telemetry counters.
+4. Visiting `http://localhost:8000/console` renders the advanced UI with feature
+   toggles, role controls, and scan profiles.
+5. Mutating a feature/role/scan via the UI produces entries in the in-memory
+   activity feed (visible in the console).
+
+## 7. Frequently Asked Questions
 
 | Symptom | Resolution |
 | --- | --- |
-| `ModuleNotFoundError: jinja2` | Ensure `pip install -e .[dev]` completed successfully. |
-| UI shows blank cards | Verify the API is reachable at `/api/control/` (reverse proxy misconfiguration can block requests). |
-| Native dependency build failures on Windows | Install Visual Studio Build Tools and rerun `pip install -e .[dev]`. |
-| Uvicorn cannot bind to port | Change `TORNADO_SERVER_PORT` in `.env` or release the occupied port. |
+| `ModuleNotFoundError: jinja2` during startup | Ensure `pip install -e .[dev]` completed successfully or rebuild the Docker image. |
+| UI shows blank cards | Verify the API is reachable at `/api/control/`; reverse proxy misconfiguration can block requests. |
+| `pip` fails with SSL/TLS errors | Update system CA certificates (`sudo apt install ca-certificates` on Debian/Ubuntu) or configure your corporate proxy. |
+| Native dependency build failures on Windows | Install Visual Studio Build Tools and re-run `pip install -e .[dev]`. |
+| Uvicorn cannot bind to port 8000 | Change `TORNADO_SERVER_PORT` in `.env` or free the occupied port. |
+| Docker container exits immediately | Confirm the `.env` file is mounted or baked into the image and that the port mapping is valid. |
 
-## 7. Next Steps
+## 8. Next Steps
 
 - Review [`docs/API.md`](API.md) for payload contracts.
 - Configure MCP integrations via [`docs/MCP.md`](MCP.md).
 - Explore automation examples in [`docs/AI-CLIENTS.md`](AI-CLIENTS.md).
+- Follow the hardened deployment practices in [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).

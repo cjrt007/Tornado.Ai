@@ -1,0 +1,11 @@
+id,title,category,description,severity,references
+M01,Improper Platform Usage,Mobile Platform,"Verify platform permissions and intents adhere to principle of least privilege.",high,"https://owasp.org/www-project-mobile-top-10/2024/M1-Improper-Platform-Usage"
+M02,Insecure Data Storage,Data Security,"Validate encrypted storage APIs and avoid plaintext sensitive data on device.",high,"https://owasp.org/www-project-mobile-top-10/2024/M2-Insecure-Data-Storage"
+M03,Insecure Communication,Transport,"Ensure TLS pinning or CA validation to mitigate MITM risk.",critical,"https://owasp.org/www-project-mobile-top-10/2024/M3-Insecure-Communication"
+M04,Insecure Authentication,Identity,"Test biometric, token, and password flows for bypass resistance.",critical,"https://owasp.org/www-project-mobile-top-10/2024/M4-Insecure-Authentication"
+M05,Insufficient Cryptography,Cryptography,"Check key management, random number usage, and deprecation of weak algorithms.",medium,"https://owasp.org/www-project-mobile-top-10/2024/M5-Insufficient-Cryptography"
+M06,Insecure Authorization,Access Control,"Exercise role enforcement and server-side checks for API requests.",high,"https://owasp.org/www-project-mobile-top-10/2024/M6-Insecure-Authorization"
+M07,Client Code Quality,Code Quality,"Review code for memory corruption, WebView exposure, and logic errors.",medium,"https://owasp.org/www-project-mobile-top-10/2024/M7-Client-Code-Quality"
+M08,Code Tampering,Resilience,"Assess tamper detection and runtime integrity controls.",medium,"https://owasp.org/www-project-mobile-top-10/2024/M8-Code-Tampering"
+M09,Reverse Engineering,Resilience,"Confirm obfuscation strategy and monitor for leaked symbols or debug code.",medium,"https://owasp.org/www-project-mobile-top-10/2024/M9-Reverse-Engineering"
+M10,Extraneous Functionality,Operational,"Audit for debug menus, staging endpoints, and leftover test credentials.",medium,"https://owasp.org/www-project-mobile-top-10/2024/M10-Extraneous-Functionality"

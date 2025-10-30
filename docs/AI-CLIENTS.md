@@ -1,9 +1,9 @@
 # AI Client Integration Guide
 
-The Python backend focuses on the control-center APIs and offline tool catalog
-rather than a live MCP transport. You can still integrate AI-assisted
-workflows by calling the REST endpoints directly or by importing the Python
-modules that drive the catalog and control surface.
+The Python backend now layers an autonomous assessment engine (AIDE, TSA, IPO,
+SACD) on top of the control-center APIs and curated tool catalog. AI clients can
+integrate by calling the REST endpoints directly or by importing the Python
+modules that power the decision logic.
 
 ## Prerequisites
 
@@ -19,45 +19,77 @@ modules that drive the catalog and control surface.
 
 ## Direct REST Calls
 
-Every AI client that can issue HTTP requests can manage the control center:
+Every AI client that can issue HTTP requests can orchestrate the full workflow:
 
-- Fetch the current state:
+- Fetch the control surface:
   ```bash
   curl http://localhost:8000/api/control/
   ```
-- Update feature toggles:
+- Analyze a target with AIDE (returns tool plan + attack graph):
   ```bash
-  curl -X POST http://localhost:8000/api/control/features \
+  curl -X POST http://localhost:8000/api/intelligence/analyze-target \
        -H "Content-Type: application/json" \
-       -d '{"patches": [{"id": "ai.orchestration", "enabled": false}]}'
+       -d '{
+            "target": {
+              "targetId": "app-01",
+              "assetKind": "webapp",
+              "environment": "staging",
+              "cvss": 7.2,
+              "criticality": "high"
+            },
+            "history": []
+          }'
   ```
-- Update roles or scan profiles by posting to `/api/control/roles` or
-  `/api/control/scans` with the appropriate patch collection payload.
+- Execute a tool via ASME with caching:
+  ```bash
+  curl -X POST http://localhost:8000/api/command/ \
+       -H "Content-Type: application/json" \
+       -d '{"toolId": "nmap_scan.sim", "params": {"targets": ["10.0.0.5"]}}'
+  ```
+- Stream observability data for dashboards:
+  ```bash
+  curl http://localhost:8000/api/telemetry/
+  ```
+- Retrieve OWASP checklists for validation prompts:
+  ```bash
+  curl http://localhost:8000/api/checklists/default
+  ```
 
 ## Python Module Embedding
 
-If your AI automation runs inside Python, import the catalog and control-center
-modules directly:
+If your AI automation runs inside Python, import the catalog, decision engine,
+and control-center modules directly:
 
 ```python
 from tornado_ai.core.control.center import ControlCenter
+from tornado_ai.core.decision import aide
 from tornado_ai.tools.catalog import load_tools_catalog
 
 control = ControlCenter()
 current_surface = control.snapshot()
 tools = load_tools_catalog()
+
+profile = {
+    "targetId": "api-gateway",
+    "assetKind": "api",
+    "environment": "production",
+    "cvss": 8.1,
+    "criticality": "high",
+}
+plan = aide.analyze(profile, history=[])
+print(plan.plan.summary)
 ```
 
 This approach avoids network hops and lets you share in-process state across
 agents.
 
-## Future MCP Transport
+## MCP Transport Status
 
 The legacy TypeScript project exposed a Model Context Protocol (MCP) server. The
-Python port keeps the registry metadata (`tornado_ai.tools.definitions`) but does
-not yet publish it over HTTP or WebSocket. When transport adapters return, the
-client instructions previously covered GitHub Copilot Chat, Roo Code, Cursor,
-and Claude. Track progress in `docs/MCP.md`.
+Python port now centralises registry metadata in `tornado_ai.tools.registry` and
+adds helpers in `tornado_ai.mcp.registry` (`registry_as_json_schemas`) to feed an
+external MCP server. Native transports remain on the roadmap—track progress in
+[`docs/MCP.md`](MCP.md).
 
 ## Troubleshooting Checklist
 
