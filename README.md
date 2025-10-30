@@ -65,13 +65,14 @@ implementations to accelerate future development of the full platform.
 |-------------|-------|---------|
 | Operating System | Ubuntu 22.04+, Debian 12+, Fedora 38+, or compatible | Windows 11 / 10 (22H2+) with PowerShell 7 or Windows Terminal |
 | Node.js | v18.19 or later (LTS) | v18.19 or later (LTS) |
-| Package Manager | pnpm 8+ (installed via Corepack) | pnpm 8+ (installed via Corepack) |
+| Package Manager | pnpm 10.20.0 (installed via Corepack) | pnpm 10.20.0 (installed via Corepack) |
 | Git | v2.40+ | v2.40+ |
 | Database | SQLite 3.39+ (default) or PostgreSQL 14+ | SQLite (bundled) or PostgreSQL 14+ |
 | Optional Build Tools | `build-essential`, `python3`, `libssl-dev`, `sqlite3` CLI | Visual Studio Build Tools 2022 or `winget install Microsoft.VisualStudio.2022.BuildTools` |
 | Additional Utilities | `curl`, `wget`, `gnupg`, `openssh-client` | OpenSSH client (optional) |
 
 - Enable Corepack: `corepack enable`
+- If Corepack reports an older pnpm, upgrade with `corepack prepare pnpm@10.20.0 --activate`
 - Ensure your shell supports environment variables (`.env`) and that ports `7700` (API) and
   `3000` (UI) are available.
 - For PostgreSQL deployments, provision the database and user with `CREATE DATABASE` and
@@ -94,7 +95,9 @@ implementations to accelerate future development of the full platform.
 
 The setup routine copies `.env.example` to `.env` when missing, prepares the `data/` directory
 for SQLite/cache artifacts, installs dependencies (auto-installing pnpm via Corepack if
-necessary), and prints follow-up commands for linting, testing, and starting the dev server.
+necessary), and prints follow-up commands for linting, testing, and starting the dev server. A
+preinstall guard prevents unsupported pnpm versions from proceeding and instructs you to activate
+pnpm 10.20.0 with Corepack if needed.
 
 ### Linux (Ubuntu/Debian)
 
@@ -108,17 +111,18 @@ necessary), and prints follow-up commands for linting, testing, and starting the
    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
    sudo apt install -y nodejs
    ```
-3. **Enable Corepack and install pnpm**:
+3. **Enable Corepack and install pnpm 10.20.0**:
    ```bash
    sudo corepack enable
-   corepack prepare pnpm@latest --activate
+   corepack prepare pnpm@10.20.0 --activate
    ```
 4. **Clone the repository**:
    ```bash
    git clone https://github.com/your-org/tornado-ai.git
    cd tornado-ai
    ```
-5. **Copy environment template and install dependencies**:
+5. **Copy environment template and install dependencies** (the preinstall hook verifies pnpm
+   >= 10.20.0):
    ```bash
    cp .env.example .env
    pnpm install
@@ -138,10 +142,10 @@ necessary), and prints follow-up commands for linting, testing, and starting the
    ```powershell
    winget install OpenJS.NodeJS.LTS
    ```
-2. **Enable Corepack and install pnpm** (run in PowerShell as Administrator):
+2. **Enable Corepack and install pnpm 10.20.0** (run in PowerShell as Administrator):
    ```powershell
    corepack enable
-   corepack prepare pnpm@latest --activate
+   corepack prepare pnpm@10.20.0 --activate
    ```
 3. **Install Git and optional build tools**:
    ```powershell
@@ -153,7 +157,7 @@ necessary), and prints follow-up commands for linting, testing, and starting the
    git clone https://github.com/your-org/tornado-ai.git
    Set-Location tornado-ai
    ```
-5. **Copy the environment template and install dependencies**:
+5. **Copy the environment template and install dependencies** (preinstall ensures pnpm >= 10.20.0):
    ```powershell
    Copy-Item .env.example .env
    pnpm install
