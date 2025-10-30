@@ -77,10 +77,10 @@ async function installDependencies() {
     await runCommand(pnpmCommand, ['install']);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      logWarning('pnpm was not detected. Attempting to enable Corepack and install pnpm@8.15.8.');
+      logWarning('pnpm was not detected. Attempting to enable Corepack and install pnpm@10.20.0.');
       try {
         await runCommand('corepack', ['enable']);
-        await runCommand('corepack', ['prepare', 'pnpm@8.15.8', '--activate']);
+        await runCommand('corepack', ['prepare', 'pnpm@10.20.0', '--activate']);
       } catch (corepackError) {
         logWarning('Automatic Corepack provisioning failed. Install pnpm manually and re-run pnpm setup.');
         throw corepackError;

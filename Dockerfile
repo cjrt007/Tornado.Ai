@@ -8,7 +8,7 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY . .
 
 RUN corepack enable \
- && corepack prepare pnpm@8.15.8 --activate \
+ && corepack prepare pnpm@10.20.0 --activate \
  && pnpm install \
  && pnpm build
 
