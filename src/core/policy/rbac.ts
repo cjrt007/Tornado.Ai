@@ -1,7 +1,6 @@
 export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
-type WildcardPermission = readonly ['*'];
-type ExplicitPermissions = readonly Permission[];
-type RolePermissions = WildcardPermission | ExplicitPermissions;
+type PermissionOrWildcard = Permission | '*';
+type RolePermissions = readonly PermissionOrWildcard[];
 
 const ALL_PERMISSIONS: Permission[] = [
   'execute_tools',
@@ -20,7 +19,7 @@ const rolePermissions = {
 export type Role = keyof typeof rolePermissions;
 type RolePermission = (typeof rolePermissions)[Role];
 
-const hasWildcard = (perms: RolePermission): perms is WildcardPermission => {
+const hasWildcard = (perms: RolePermission): perms is readonly ['*'] => {
   return perms.length === 1 && perms[0] === '*';
 };
 
@@ -30,7 +29,7 @@ const expandPermissions = (role: Role): Permission[] => {
     return [...ALL_PERMISSIONS];
   }
 
-  return perms.slice();
+  return [...perms];
 };
 
 export const hasPermission = (role: Role, permission: Permission): boolean => {
