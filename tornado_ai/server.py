@@ -6,14 +6,12 @@ from fastapi import FastAPI
 from .api.routes import register_routes
 from .config import config
 from .core.metrics.logger import configure_logging
-from .ui import register_ui
 
 
 def create_app() -> FastAPI:
     logger = configure_logging(config.logging.to_logging_dict())
     app = FastAPI(title="Tornado AI", version="0.1.0")
     register_routes(app)
-    register_ui(app)
 
     @app.on_event("startup")
     async def _announce_startup() -> None:  # pragma: no cover - log side effect

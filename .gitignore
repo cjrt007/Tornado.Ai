@@ -6,8 +6,6 @@ __pycache__/
 .venv/
 .mypy_cache/
 .pytest_cache/
-.egg-info/
-.eggs/
 .idea/
 .vscode/
 .DS_Store
