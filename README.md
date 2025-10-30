@@ -11,12 +11,13 @@ and rich telemetry.
 ## Tech Stack
 
 - **Runtime**: Python 3.11+
-- **Web framework**: FastAPI
-- **Validation**: Pydantic v2
-- **Configuration**: `python-dotenv`
-- **Testing**: Pytest
+- **API Framework**: FastAPI + Uvicorn
+- **Validation**: Pydantic v2 models in `tornado_ai.shared`
+- **Caching**: Content-addressed SCM with TTL + LRU eviction
+- **Tool registry**: MCP-aware registry with JSON Schema definitions
+- **Testing**: Pytest (Python) and Vitest (UI simulations)
 
-## Getting Started
+## Architecture at a Glance
 
 ### Local Python environment
 
@@ -24,17 +25,20 @@ and rich telemetry.
    ```bash
    pip install -e .[dev]
    ```
-2. Run the automated test suite:
+3. Run checks:
    ```bash
    pytest
    ```
-3. Launch the API locally:
+4. Launch the API:
    ```bash
    uvicorn tornado_ai.server:app --reload
    ```
 
-By default the service listens on `127.0.0.1:8000` and exposes REST endpoints
-under `/api` for health reporting and control-surface management.
+### Native Kali Linux
+
+When the host distribution is detected as Kali Linux, Tornado.ai executes tools
+directly on the host. Install the Python requirements as above. No Docker
+container is provisioned for tool execution in this mode.
 
 ### Optional: Docker runtime
 
