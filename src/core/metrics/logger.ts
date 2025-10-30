@@ -1,12 +1,13 @@
-import pino from 'pino';
+import type { FastifyBaseLogger, FastifyServerOptions } from 'fastify';
 
 import type { AppConfig } from '../../config/index.js';
 
 type LoggingConfig = AppConfig['logging'];
+type FastifyLoggerConfig = Exclude<NonNullable<FastifyServerOptions['logger']>, boolean | FastifyBaseLogger>;
 
-export const createLogger = (logging: LoggingConfig) => {
+export const createLogger = (logging: LoggingConfig): FastifyLoggerConfig => {
   if (logging.pretty) {
-    return pino({
+    return {
       level: logging.level,
       transport: {
         target: 'pino-pretty',
@@ -15,8 +16,10 @@ export const createLogger = (logging: LoggingConfig) => {
           translateTime: 'SYS:standard'
         }
       }
-    });
+    } as FastifyLoggerConfig;
   }
 
-  return pino({ level: logging.level });
+  return {
+    level: logging.level
+  } as FastifyLoggerConfig;
 };

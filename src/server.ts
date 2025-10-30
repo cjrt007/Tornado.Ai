@@ -25,10 +25,13 @@ if (process.env.NODE_ENV !== 'test') {
   app
     .listen({ port: config.server.port, host: config.server.host })
     .then(() => {
-      app.log.info('Tornado.ai server running', {
-        port: config.server.port,
-        host: config.server.host
-      });
+      app.log.info(
+        {
+          port: config.server.port,
+          host: config.server.host
+        },
+        'Tornado.ai server running'
+      );
     })
     .catch((error) => {
       app.log.error({ err: error }, 'Failed to start server');
