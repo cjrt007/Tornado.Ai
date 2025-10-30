@@ -1,0 +1,13 @@
+node_modules
+pnpm-lock.yaml
+npm-debug.log
+.git
+.gitignore
+Dockerfile
+Dockerfile.*
+.dockerignore
+dist
+coverage
+.env
+*.local
+ui/node_modules
