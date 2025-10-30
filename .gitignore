@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+.mypy_cache/
+.pytest_cache/
+.idea/
+.vscode/
+.DS_Store
+data/audit.log.jsonl
