@@ -56,8 +56,37 @@ export const ChecklistItemSchema = z.object({
   testedDate: z.string().optional()
 });
 
+export const SecurityToolsCollectionSchema = z.object({
+  version: z.string(),
+  last_updated: z.string(),
+  categories: z.array(
+    z.object({
+      name: z.string(),
+      tool_count: z.number(),
+      tools: z.array(
+        z.object({
+          name: z.string(),
+          description: z.string()
+        })
+      )
+    })
+  ),
+  new_features: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string()
+    })
+  ),
+  statistics: z.object({
+    total_categories: z.number(),
+    total_tools: z.number(),
+    last_verified: z.string()
+  })
+});
+
 export type ToolSpec = z.infer<typeof ToolSpecSchema>;
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
+export type SecurityToolsCollection = z.infer<typeof SecurityToolsCollectionSchema>;
