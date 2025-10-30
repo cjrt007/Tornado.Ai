@@ -15,6 +15,8 @@ catalog that mirrors the original TypeScript implementation.
 
 ## Getting Started
 
+### Local Python environment
+
 1. Install dependencies (the project uses a `pyproject.toml`):
    ```bash
    pip install -e .[dev]
@@ -30,6 +32,27 @@ catalog that mirrors the original TypeScript implementation.
 
 By default the service listens on `127.0.0.1:8000` and exposes REST endpoints
 under `/api` for health reporting and control-surface management.
+
+### Optional: Docker runtime
+
+Build and run the container to keep Python tooling isolated from the host:
+
+```bash
+docker build -t tornado-ai .
+docker run --rm -p 8000:8000 --env-file .env tornado-ai
+```
+
+If you need live code iteration, mount the repository as a volume and override
+the startup command:
+
+```bash
+docker run --rm -it -p 8000:8000 -v "$(pwd)":/app \
+  --env-file .env tornado-ai \
+  uvicorn tornado_ai.server:app --host 0.0.0.0 --reload
+```
+
+See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for an advanced guide that
+covers Linux, Windows, Docker, prerequisites, and FAQs.
 
 ### Exposed API Surface
 
