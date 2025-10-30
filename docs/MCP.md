@@ -80,7 +80,11 @@ Use the helper functions in `tornado_ai.mcp.registry` to inspect the registry
 and feed other systems:
 
 ```python
-from tornado_ai.mcp.registry import list_tool_definitions, registry_size
+from tornado_ai.mcp.registry import (
+    list_tool_definitions,
+    registry_as_json_schemas,
+    registry_size,
+)
 
 definitions = list_tool_definitions()
 print(f"Registry tracks {registry_size()} tool stubs")
