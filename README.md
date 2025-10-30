@@ -1,320 +1,228 @@
-# Tornado.ai
+# Tornado.ai (Python Edition)
 
-Tornado.ai is a multi-role offensive security testing platform that combines a Fastify
-backend, Model Context Protocol (MCP) server, and React UI. The project follows a
-hexagonal architecture to keep domain logic, transport interfaces, and adapters cleanly
-separated while supporting advanced authentication, reporting, visualization, and
-checklist automation workflows.
+Tornado.ai is a security-operations playground that now ships as a Python-first
+FastAPI service paired with an immersive web console. The platform models
+feature toggles, RBAC policies, Nessus-style scan orchestration, and an MCP tool
+registry so you can experiment with complex automation flows end to end.
 
-- **Tech stack**: Node.js 18+, TypeScript, Fastify, Zod, Pino, better-sqlite3/PostgreSQL,
-  Vitest, React 18, Tailwind CSS, Zustand/Redux Toolkit.
-- **Security features**: Multi-role RBAC, JWT authentication, MFA via TOTP, detailed audit
-  logging, and tool execution approvals.
-- **Core subsystems**: Decision engine (AIDE), tool orchestration (ASME/APME), autonomous
-  agents (AAAM), visualization (AVE), caching (SCM), observability, and reporting.
-- **Streamlined setup**: `pnpm setup` bootstraps environment files, folders, and dependencies
-  in a single step.
-- **Containerization**: First-class Dockerfile and Compose stack for reproducible deployments
-  across workstations and CI pipelines.
-
-> ⚠️ **Warning**: Tornado.ai is intended for authorized security testing only. Always obtain
-> explicit permission before assessing a target and follow responsible disclosure
-> practices.
+---
 
 ## Table of Contents
 
-1. [Repository Layout](#repository-layout)
-2. [Prerequisites](#prerequisites)
-3. [Installation](#installation)
-   - [Quick Start (One-command setup)](#quick-start-one-command-setup)
-   - [Linux (Ubuntu/Debian)](#linux-ubuntudebian)
-   - [Windows 11/10](#windows-1110)
-4. [Configuration](#configuration)
-5. [Running the Platform](#running-the-platform)
-6. [Containerized Deployment](#containerized-deployment)
-7. [Additional Documentation](#additional-documentation)
+1. [Prerequisites](#prerequisites)
+2. [Installation](#installation)
+   - [Linux](#linux)
+   - [Windows](#windows)
+3. [Configuration](#configuration)
+4. [Running the Advanced Console](#running-the-advanced-console)
+5. [API Overview](#api-overview)
+6. [Testing](#testing)
+7. [MCP Configuration](#mcp-configuration)
 8. [FAQ](#faq)
-9. [License](#license)
+9. [Project Layout](#project-layout)
 
-## Repository Layout
-
-```
-src/
-  api/               # Fastify controllers and route registration
-  agents/            # Autonomous security agent entry points
-  auth/              # Authentication, MFA, and permission middleware
-  core/              # Domain services (audit, cache, metrics, policy, etc.)
-  mcp/               # Model Context Protocol server integration
-  reports/           # Report generation pipelines and templates
-  tools/             # Tool registry grouped by category
-  viz/               # Visualization orchestration (AVE components)
-  checklists/        # Checklist management engine
-  shared/            # Cross-cutting types and utilities
-ui/
-  ...                # React + Tailwind UI scaffold (see `ui/README.md`)
-docs/
-  ...                # Architecture, APIs, tooling, deployment, and checklist guides
-```
-
-Each directory contains TypeScript modules that define contracts, DTOs, and placeholder
-implementations to accelerate future development of the full platform.
+---
 
 ## Prerequisites
 
-| Requirement | Linux | Windows |
-|-------------|-------|---------|
-| Operating System | Ubuntu 22.04+, Debian 12+, Fedora 38+, or compatible | Windows 11 / 10 (22H2+) with PowerShell 7 or Windows Terminal |
-| Node.js | v18.19 or later (LTS) | v18.19 or later (LTS) |
-| Package Manager | pnpm 10.20.0 (installed via Corepack) | pnpm 10.20.0 (installed via Corepack) |
-| Git | v2.40+ | v2.40+ |
-| Database | SQLite 3.39+ (default) or PostgreSQL 14+ | SQLite (bundled) or PostgreSQL 14+ |
-| Optional Build Tools | `build-essential`, `python3`, `libssl-dev`, `sqlite3` CLI | Visual Studio Build Tools 2022 or `winget install Microsoft.VisualStudio.2022.BuildTools` |
-| Additional Utilities | `curl`, `wget`, `gnupg`, `openssh-client` | OpenSSH client (optional) |
+- **Python**: 3.11 or later.
+- **pip**: recent version recommended (`python -m pip install --upgrade pip`).
+- **Optional** (for production hosting): a process manager such as `systemd` or
+  `supervisord`, and an ASGI server such as `uvicorn` or `hypercorn`.
+- **Git**: to clone the repository.
 
-- Enable Corepack: `corepack enable`
-- If Corepack reports an older pnpm, upgrade with `corepack prepare pnpm@10.20.0 --activate`
-- Ensure your shell supports environment variables (`.env`) and that ports `7700` (API) and
-  `3000` (UI) are available.
-- For PostgreSQL deployments, provision the database and user with `CREATE DATABASE` and
-  `CREATE ROLE` privileges prior to running migrations.
+If you plan to run the MCP tool registry or export scan reports you will also
+need outbound internet access for dependency downloads and (optional)
+`sqlite3` for persistent caching.
+
+---
 
 ## Installation
 
-### Quick Start (One-command setup)
+The project is distributed as a standard Python package. You can install it in a
+virtual environment or directly on the host machine.
 
-1. Ensure [Corepack](https://nodejs.org/api/corepack.html) is enabled (ships with Node.js 18+):
-   ```bash
-   corepack enable
-   ```
-2. Clone the repository and run the bootstrapper:
-   ```bash
-   git clone https://github.com/your-org/tornado-ai.git
-   cd tornado-ai
-   pnpm setup
-   ```
+### Linux
 
-The setup routine copies `.env.example` to `.env` when missing, prepares the `data/` directory
-for SQLite/cache artifacts, installs dependencies (auto-installing pnpm via Corepack if
-necessary), and prints follow-up commands for linting, testing, and starting the dev server. A
-preinstall guard prevents unsupported pnpm versions from proceeding and instructs you to activate
-pnpm 10.20.0 with Corepack if needed.
+```bash
+# 1. Clone the project
+git clone https://github.com/your-org/Tornado.Ai.git
+cd Tornado.Ai
 
-### Linux (Ubuntu/Debian)
+# 2. Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
-1. **Install system packages**:
-   ```bash
-   sudo apt update
-   sudo apt install -y curl ca-certificates build-essential python3 sqlite3 libsqlite3-dev gnupg
-   ```
-2. **Install Node.js 18 LTS via NodeSource**:
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt install -y nodejs
-   ```
-3. **Enable Corepack and install pnpm 10.20.0**:
-   ```bash
-   sudo corepack enable
-   corepack prepare pnpm@10.20.0 --activate
-   ```
-4. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-org/tornado-ai.git
-   cd tornado-ai
-   ```
-5. **Copy environment template and install dependencies** (the preinstall hook verifies pnpm
-   >= 10.20.0):
-   ```bash
-   cp .env.example .env
-   pnpm install
-   ```
-6. **Verify the setup**:
-   ```bash
-   pnpm lint
-   pnpm test
-   pnpm dev
-   ```
-   Access the API at http://localhost:7700 and the UI (when running) at http://localhost:3000.
+# 3. Install the package with development extras
+pip install --upgrade pip
+pip install -e .[dev]
 
-### Windows 11/10
+# 4. Run smoke tests to validate the install
+pytest
+```
 
-1. **Install Node.js 18 LTS** using the [official installer](https://nodejs.org/) or with
-   Winget:
-   ```powershell
-   winget install OpenJS.NodeJS.LTS
-   ```
-2. **Enable Corepack and install pnpm 10.20.0** (run in PowerShell as Administrator):
-   ```powershell
-   corepack enable
-   corepack prepare pnpm@10.20.0 --activate
-   ```
-3. **Install Git and optional build tools**:
-   ```powershell
-   winget install Git.Git
-   winget install Microsoft.VisualStudio.2022.BuildTools --silent --override "--add Microsoft.VisualStudio.Workload.VCTools"
-   ```
-4. **Clone the repository** using PowerShell or Git Bash:
-   ```powershell
-   git clone https://github.com/your-org/tornado-ai.git
-   Set-Location tornado-ai
-   ```
-5. **Copy the environment template and install dependencies** (preinstall ensures pnpm >= 10.20.0):
-   ```powershell
-   Copy-Item .env.example .env
-   pnpm install
-   ```
-6. **Run validation commands** (PowerShell or Windows Terminal):
-   ```powershell
-   pnpm lint
-   pnpm test
-   pnpm dev
-   ```
-   By default the Fastify server binds to `http://localhost:7700`.
+Linux notes:
+
+- `libsqlite3` and `build-essential` are recommended when running heavy MCP
+  tooling (for example: `sudo apt install build-essential libsqlite3-dev`).
+- When deploying under `systemd`, set the `WorkingDirectory` to the project root
+  so the FastAPI app can locate the console templates.
+
+### Windows
+
+```powershell
+# 1. Clone the project
+git clone https://github.com/your-org/Tornado.Ai.git
+cd Tornado.Ai
+
+# 2. Create and activate a virtual environment
+py -3.11 -m venv .venv
+.\.venv\Scripts\activate
+
+# 3. Install dependencies
+python -m pip install --upgrade pip
+pip install -e .[dev]
+
+# 4. Run tests
+pytest
+```
+
+Windows notes:
+
+- When launching Uvicorn on Windows use `--host 0.0.0.0 --reload --log-level info`.
+- The advanced console depends on static files stored in `tornado_ai/ui/static`.
+  Ensure your antivirus does not sandbox the repository so static assets remain
+  accessible.
+- If you encounter SSL/TLS errors when installing dependencies, run
+  `python -m pip install --upgrade certifi`.
+
+For containerised deployments or additional tuning (workers, TLS termination)
+see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
 
 ## Configuration
 
-Runtime configuration is defined in `src/config/index.ts` and sourced from environment
-variables. Use the provided `.env.example` as a baseline and customize the following keys:
+Runtime settings are exposed via environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SERVER_HOST` | Address for the Fastify API server | `0.0.0.0` |
-| `SERVER_PORT` | Port for the API server | `7700` |
-| `JWT_SECRET` | Secret used to sign JWT tokens (required) | _none_ |
-| `JWT_EXPIRY` | Access token lifetime (e.g. `24h`) | `24h` |
-| `MFA_ISSUER` | TOTP issuer label for authenticator apps | `Tornado.ai` |
-| `DATABASE_TYPE` | `sqlite` or `postgres` | `sqlite` |
-| `DATABASE_PATH` | File path for SQLite database | `./data/tornado.db` |
-| `DATABASE_URL` | PostgreSQL connection string (if `DATABASE_TYPE=postgres`) | _none_ |
-| `CACHE_MAX_SIZE` | Content-addressed cache size (bytes) | `1073741824` (1 GB) |
-| `CACHE_DEFAULT_TTL` | Default cache entry TTL in seconds | `3600` |
-| `TOOLS_MAX_CONCURRENT` | Max concurrent tool executions | `5` |
-| `TOOLS_TIMEOUT` | Tool execution timeout (seconds) | `300` |
-| `LOG_LEVEL` | Pino log level (`info`, `debug`, etc.) | `info` |
+| Variable | Default | Description |
+| --- | --- | --- |
+| `TORNADO_SERVER_HOST` | `127.0.0.1` | Address the API listens on. |
+| `TORNADO_SERVER_PORT` | `8000` | TCP port for the API and console. |
+| `TORNADO_SERVER_CORS` | `true` | Toggle CORS support for external dashboards. |
+| `TORNADO_LOG_LEVEL` | `INFO` | Logging verbosity passed to Pino-compatible logger. |
+| `TORNADO_CACHE_PATH` | (in-memory) | Optional filesystem cache directory. |
 
-Configuration can also be supplied via a `config.yaml` file if you prefer declarative
-settings. Environment variables take precedence over file-based configuration.
+Create a `.env` file in the project root to persist overrides during local
+development.
 
-### Database Notes
+---
 
-- SQLite is the default and requires no additional services. Ensure the `data/` directory is
-  writable by the process owner.
-- PostgreSQL deployments should configure SSL, connection pooling, and migrations. Update
-  `DATABASE_URL` accordingly.
+## Running the Advanced Console
 
-### Secrets Management
-
-For production, store sensitive values (`JWT_SECRET`, database credentials) in a secrets
-manager or encrypted environment store such as HashiCorp Vault, AWS Secrets Manager, or
-Azure Key Vault.
-
-## Running the Platform
-
-### Development
-
-```bash
-pnpm dev          # Start Fastify with hot reload
-pnpm dev:ui       # Start the React development server (ui/ directory)
-```
-
-The UI proxies API calls to `http://localhost:7700` and surfaces the **Control Center** at
-`http://localhost:3000` for feature flags, role governance, and scan orchestration.
-
-### Production
-
-```bash
-pnpm build        # Emit compiled JavaScript to dist/
-node dist/server.js
-```
-
-Use a process manager (pm2, systemd, Docker) for long-running deployments. Serve the UI via
-a static hosting provider (Vercel, Netlify) or behind the same reverse proxy as the API.
-
-## Containerized Deployment
-
-### Build the image
-
-```bash
-docker build -t tornado-ai:dev .
-```
-
-The multi-stage Dockerfile installs dependencies with pnpm, compiles the TypeScript source,
-and produces a production-ready runtime image that exposes port `7700`.
-
-### Run with Docker Compose
-
-1. Copy `.env.example` to `.env` and update secrets/connection details as needed.
-2. Launch the stack (API + optional PostgreSQL) with persistent volumes:
+1. Start the FastAPI server:
    ```bash
-   docker compose up --build
+   uvicorn tornado_ai.server:app --reload --host 0.0.0.0 --port 8000
    ```
-3. Access the API at http://localhost:7700 once the health check reports a healthy status.
+2. Visit [http://localhost:8000/console](http://localhost:8000/console) in your
+   browser.
+3. Use the tabbed interface to:
+   - Toggle features, lock capabilities, and annotate restart requirements.
+   - Manage roles with granular permission and feature mappings.
+   - Model Nessus-style scan profiles with guardrails, approvals, and telemetry.
+   - Review live activity logs of every change applied.
 
-The Compose file mounts `./data` for SQLite storage, provisions a PostgreSQL container with
-health checks, and wires the Fastify service to use environment variables from `.env`.
+All UI interactions call the same REST endpoints exposed by the API, so any
+updates immediately propagate to automation clients.
 
-### Testing & Quality
+---
+
+## API Overview
+
+The REST surface remains stable for programmatic clients. Key endpoints:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/health/` | Service health metadata and MCP registry summary. |
+| `GET` | `/api/control/` | Snapshot of features, roles, and scan profiles. |
+| `POST` | `/api/control/features` | Create or mutate feature toggles. |
+| `POST` | `/api/control/roles` | Create or mutate RBAC roles. |
+| `POST` | `/api/control/scans` | Create or mutate scan profiles. |
+
+Refer to [`docs/API.md`](docs/API.md) for payload contracts and schema
+examples.
+
+---
+
+## Testing
 
 ```bash
-pnpm lint
-pnpm type-check
-pnpm test
+pytest
 ```
 
-## Additional Documentation
+The suite covers the RBAC engine, cache, control-center state machine, tool
+catalog, and MCP registry validation to ensure parity with the historic
+TypeScript implementation.
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [API Reference](docs/API.md)
-- [Tool Catalog](docs/TOOLS.md)
-- [Checklist System](docs/CHECKLISTS.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [MCP Configuration](docs/MCP.md)
-- [AI Client Integration](docs/AI-CLIENTS.md)
-- [UI Overview](ui/README.md)
+---
+
+## MCP Configuration
+
+The MCP registry ships with representative tool definitions under
+`tornado_ai/tools`. To register the service with an MCP-compliant client:
+
+1. Copy `docs/mcp-config.example.yaml` (see [`docs/MCP.md`](docs/MCP.md)) and
+   update the target host, API token (if enabled), and tool allowlist.
+2. Ensure `mcp.streaming-results` remains enabled in the feature grid—this keeps
+   WebSocket streaming active for UI telemetry.
+3. Restart the client or re-discover the MCP endpoint after updating the config
+   file.
+
+Detailed integration walkthroughs live in [`docs/MCP.md`](docs/MCP.md).
+
+---
 
 ## FAQ
 
-**How do I switch between SQLite and PostgreSQL?**  
-Set `DATABASE_TYPE=postgres` and provide `DATABASE_URL`. Run any migration scripts before
-starting the server. For development, leave the defaults to use SQLite.
+**Why Python and FastAPI?**  
+The rewritten stack mirrors modern SecOps tooling, making it easier to embed in
+Python-first automation workflows and to leverage FastAPI's async capabilities.
 
-**Where do I configure role-based access control (RBAC) permissions?**
-RBAC policies live in `src/core/policy/rbac.ts`. Update the role-to-permission mappings and
-add new permissions as needed.
+**How does the console compare to Nessus or Burp Suite?**  
+The console emphasises orchestration rather than engine execution. You can
+curate scan profiles, approvals, and guardrails similar to Nessus policies or
+Burp engagement dashboards, but execution is simulated through the tool catalog.
 
-**How do I control platform features, role access, and scan blueprints from the UI?**
-Run both `pnpm dev` and `pnpm dev:ui`, then open the Control Center at
-`http://localhost:3000`. The React console reads/writes to the `/api/control` endpoints to
-toggle feature flags, adjust role permissions/MFA policies, and refine scan profiles with
-Nessus-grade scheduling and guardrails.
+**Where are changes stored?**  
+State mutates in-memory via the `ControlCenter`. Persist changes by exporting the
+`ControlSurface` snapshot (see `tornado_ai/core/control/center.py`) or backing it
+with your preferred datastore.
 
-**How do I enable Multi-Factor Authentication (MFA)?**
-MFA utilities reside in `src/auth/mfa/totp.ts`. Ensure `MFA_ISSUER` is set and expose the MFA
-setup/verification routes from `src/auth/handlers/auth.ts` through your Fastify router.
+**Can I extend the MCP registry?**  
+Yes. Add new tool descriptors in `tornado_ai/tools/definitions.py` and register
+supporting schemas in `tornado_ai/shared/types.py`. The registry automatically
+validates new entries on startup.
 
-**How are security tools registered with the MCP server?**
-The registry is defined in `src/tools/definitions.ts` and exported via `src/mcp/registry`.
-`pnpm mcp` prints the descriptor catalog for client consumption.
+**The console does not load static assets—what now?**  
+Ensure FastAPI mounted `/console/static` correctly. Running behind a reverse
+proxy? Expose the `/console` path without rewriting, or mount the static assets
+under your preferred prefix via `register_ui`.
 
-**How do I connect AI coding assistants (Copilot, Cursor, Claude, etc.) to Tornado.ai?**
-Follow the step-by-step instructions in [docs/AI-CLIENTS.md](docs/AI-CLIENTS.md). Each
-client uses the MCP endpoint at `http://localhost:7700` with a bearer token scoped to the
-permissions it needs (e.g., `execute_tools`).
+---
 
-**Can I containerize Tornado.ai?**
-Yes. The repository ships with a production-focused Dockerfile and `docker-compose.yml`.
-Build via `docker build -t tornado-ai:dev .` and launch the stack with `docker compose up` to
-run the API alongside an optional PostgreSQL service.
+## Project Layout
 
-**What observability features are available out of the box?**  
-Structured JSON logs are emitted via Pino (`src/core/metrics/logger.ts`). Metrics and health
-checks are exposed through Fastify routes under `src/api`. Extend these modules to integrate
-with Prometheus, OpenTelemetry, or your preferred monitoring stack.
+```
+tornado_ai/
+  api/            # FastAPI routers and controllers
+  auth/           # Authentication helpers and MFA utilities
+  checklists/     # Compliance checklists and reporting scaffolding
+  config/         # Environment-driven configuration objects
+  core/           # Domain services (audit log, cache, control center, RBAC)
+  mcp/            # Offline MCP registry helpers
+  shared/         # Pydantic models shared across modules
+  tools/          # Tool definitions and catalog datasets
+  ui/             # Console templates, static assets, and registration helpers
+```
 
-**How do I update checklists or import custom ones?**  
-Checklist management utilities live under `src/checklists`. Use the CSV import endpoint
-(`POST /api/checklists/:id/import`) once the REST API layer is wired up. Default OWASP
-checklists ship in `docs/CHECKLISTS.md` for reference.
-
-## License
-
-Copyright (c) 2024 Tornado.ai. All rights reserved.
+For deeper architectural notes review [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

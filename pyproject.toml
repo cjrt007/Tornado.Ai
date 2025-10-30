@@ -1,0 +1,30 @@
+[project]
+name = "tornado-ai"
+version = "0.1.0"
+description = "Python port of the Tornado.Ai control and orchestration service"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "jinja2>=3.1.4",
+  "uvicorn>=0.29.0",
+  "pydantic>=2.6.0",
+  "python-dotenv>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+where = ['.']
+include = ['tornado_ai*']
+
+[build-system]
+requires = ['setuptools>=61.0', 'wheel']
+build-backend = 'setuptools.build_meta'

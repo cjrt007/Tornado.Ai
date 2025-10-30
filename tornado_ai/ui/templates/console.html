@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tornado AI Control Center</title>
+    <link rel="stylesheet" href="/console/static/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-icon">🌪️</div>
+        <div>
+          <h1>Tornado AI Console</h1>
+          <p>Advanced orchestration controls inspired by Nessus &amp; Burp Suite</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="refresh-surface" class="ghost">Refresh Surface</button>
+        <span id="last-refresh">Loading control surface…</span>
+      </div>
+    </header>
+
+    <main>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-target="features" role="tab">Feature Toggles</button>
+        <button class="tab" data-target="roles" role="tab">Role Matrix</button>
+        <button class="tab" data-target="scans" role="tab">Scan Profiles</button>
+        <button class="tab" data-target="telemetry" role="tab">Activity &amp; Telemetry</button>
+      </nav>
+
+      <section id="features" class="panel active" role="tabpanel">
+        <div class="panel-header">
+          <div>
+            <h2>Feature Toggles</h2>
+            <p>Enable and lock capability modules exposed to the platform.</p>
+          </div>
+          <div class="actions">
+            <input type="search" id="feature-filter" placeholder="Filter by name, tag, or category" />
+            <button id="open-feature-form" class="primary">Add Feature</button>
+          </div>
+        </div>
+        <div id="feature-grid" class="grid"></div>
+        <dialog id="feature-form" class="modal">
+          <form method="dialog">
+            <header>
+              <h3>Create or Update Feature</h3>
+            </header>
+            <div class="field-grid">
+              <label>
+                Feature ID
+                <input name="id" required placeholder="feature.identifier" />
+              </label>
+              <label>
+                Label
+                <input name="label" required placeholder="Human readable name" />
+              </label>
+              <label>
+                Category
+                <input name="category" placeholder="observability" />
+              </label>
+              <label>
+                Tags (comma separated)
+                <input name="tags" placeholder="ops,security" />
+              </label>
+              <label class="full">
+                Description
+                <textarea name="description" rows="3" placeholder="Describe the capability"></textarea>
+              </label>
+              <label>
+                Enabled
+                <input type="checkbox" name="enabled" checked />
+              </label>
+              <label>
+                Locked
+                <input type="checkbox" name="locked" />
+              </label>
+              <label>
+                Requires Restart
+                <input type="checkbox" name="requiresRestart" />
+              </label>
+            </div>
+            <footer>
+              <button value="cancel" class="ghost">Cancel</button>
+              <button value="submit" class="primary">Save Feature</button>
+            </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section id="roles" class="panel" role="tabpanel">
+        <div class="panel-header">
+          <div>
+            <h2>Role Matrix</h2>
+            <p>Fine-grained RBAC controls with enforced guardrails.</p>
+          </div>
+          <button id="open-role-form" class="primary">Add Role</button>
+        </div>
+        <div id="role-grid" class="grid"></div>
+        <dialog id="role-form" class="modal">
+          <form method="dialog">
+            <header>
+              <h3>Create or Update Role</h3>
+            </header>
+            <div class="field-grid">
+              <label>
+                Role Key
+                <input name="role" required placeholder="operations" />
+              </label>
+              <label>
+                Display Name
+                <input name="displayName" required placeholder="Operations Lead" />
+              </label>
+              <label class="full">
+                Description
+                <textarea name="description" rows="3" placeholder="Explain responsibilities"></textarea>
+              </label>
+              <label class="full">
+                Permissions (comma separated)
+                <input name="permissions" placeholder="execute_tools,view_reports" />
+              </label>
+              <label class="full">
+                Feature Access (comma separated feature IDs)
+                <input name="featureAccess" placeholder="ai.orchestration,ui.advanced-controls" />
+              </label>
+              <label>
+                Default Landing View
+                <input name="defaultLanding" placeholder="dashboard" />
+              </label>
+              <label>
+                MFA Required
+                <input type="checkbox" name="mfaRequired" checked />
+              </label>
+              <label>
+                Session Timeout (minutes)
+                <input type="number" name="sessionTimeoutMinutes" min="5" value="30" />
+              </label>
+            </div>
+            <footer>
+              <button value="cancel" class="ghost">Cancel</button>
+              <button value="submit" class="primary">Save Role</button>
+            </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section id="scans" class="panel" role="tabpanel">
+        <div class="panel-header">
+          <div>
+            <h2>Scan Orchestration</h2>
+            <p>Design Nessus-style scan profiles with guardrails and scheduling.</p>
+          </div>
+          <button id="open-scan-form" class="primary">Add Scan Profile</button>
+        </div>
+        <div id="scan-grid" class="grid"></div>
+        <dialog id="scan-form" class="modal">
+          <form method="dialog">
+            <header>
+              <h3>Create or Update Scan Profile</h3>
+            </header>
+            <div class="field-grid">
+              <label>
+                Profile ID
+                <input name="id" required placeholder="scan.webapp.blue" />
+              </label>
+              <label>
+                Name
+                <input name="name" required placeholder="Blue Team Web Scan" />
+              </label>
+              <label>
+                Category
+                <input name="category" placeholder="webapp" />
+              </label>
+              <label class="full">
+                Description
+                <textarea name="description" rows="3" placeholder="Scope of the scan"></textarea>
+              </label>
+              <label class="full">
+                Targets (comma separated)
+                <input name="targets" placeholder="https://app.example.com,https://api.example.com" />
+              </label>
+              <label class="full">
+                Tooling IDs (comma separated)
+                <input name="tooling" placeholder="nmap_scan.sim,nuclei_scan.sim" />
+              </label>
+              <label class="full">
+                Parameters (JSON)
+                <textarea name="parameters" rows="4" placeholder='{ "nmap_scan": { "intensity": "med" } }'></textarea>
+              </label>
+              <label>
+                Tags (comma separated)
+                <input name="tags" placeholder="continuous,high-priority" />
+              </label>
+              <label>
+                Schedule Type
+                <select name="scheduleType">
+                  <option value="scheduled">Scheduled</option>
+                  <option value="continuous">Continuous</option>
+                  <option value="on_demand">On Demand</option>
+                </select>
+              </label>
+              <label>
+                Cron (optional)
+                <input name="cron" placeholder="0 2 * * 1" />
+              </label>
+              <label>
+                Timezone
+                <input name="timezone" placeholder="UTC" />
+              </label>
+              <label>
+                Approvals Required
+                <input type="checkbox" name="approvalsRequired" />
+              </label>
+              <label>
+                Approvals Needed
+                <input type="number" name="approvalsNeeded" min="0" value="0" />
+              </label>
+              <label>
+                Safe Mode
+                <input type="checkbox" name="safeMode" checked />
+              </label>
+              <label>
+                Max Parallel Tasks
+                <input type="number" name="maxParallelTasks" min="1" value="3" />
+              </label>
+              <label class="full">
+                Notify Roles (comma separated)
+                <input name="notifyRoles" placeholder="admin,pentester" />
+              </label>
+              <label>
+                Owner Role
+                <input name="owner" placeholder="admin" />
+              </label>
+            </div>
+            <footer>
+              <button value="cancel" class="ghost">Cancel</button>
+              <button value="submit" class="primary">Save Scan Profile</button>
+            </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section id="telemetry" class="panel" role="tabpanel">
+        <div class="panel-header">
+          <div>
+            <h2>Recent Activity</h2>
+            <p>Live feedback from your configuration workflows.</p>
+          </div>
+          <button id="clear-activity" class="ghost">Clear</button>
+        </div>
+        <ul id="activity-feed" class="activity"></ul>
+      </section>
+    </main>
+
+    <div id="toast" role="alert"></div>
+
+    <script src="/console/static/app.js" type="module"></script>
+  </body>
+</html>

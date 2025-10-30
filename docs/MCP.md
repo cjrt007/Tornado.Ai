@@ -1,76 +1,96 @@
 # Model Context Protocol (MCP) Configuration Guide
 
-The Tornado.ai MCP server exposes every supported security tool, checklist action, and orchestration primitive via the Model Context Protocol so automation platforms can discover capabilities and execute workloads safely. This guide documents configuration surfaces, deployment considerations, and validation workflows. For client-specific connection instructions (Copilot, Roo Code, Cursor, Claude, etc.), see [AI Client Integration](AI-CLIENTS.md).
+Tornado.ai ships with a curated MCP registry that mirrors the historical
+TypeScript dataset. While a built-in transport is still on the roadmap, you can
+integrate the metadata with third-party MCP hubs or bespoke automation stacks.
+This guide walks through configuration, file formats, and verification steps.
 
-## Quick Start
+## Registry Dataset
 
-1. Ensure the Fastify backend is running with MCP tooling enabled:
-   ```bash
-   pnpm build
-   pnpm mcp
-   ```
-2. Configure the MCP client with the server endpoint (default `http://localhost:7700`).
-3. Authenticate using a service account or API token with the `execute_tools` permission.
-4. Use the discovery endpoint to enumerate available tools and associated schemas.
+Use the helper functions in `tornado_ai.mcp.registry` to inspect the available
+metadata:
 
-## Server Configuration
+```python
+from tornado_ai.mcp.registry import list_tool_definitions, registry_size
 
-| Setting | Location | Description |
-| --- | --- | --- |
-| `server.host` | `config.yaml` / `.env` | Bind address for the Fastify + MCP server. |
-| `server.port` | `config.yaml` / `.env` | Port for REST and MCP endpoints (defaults to `7700`). |
-| `auth.jwt_secret` | `.env` | Secret used to sign JWTs for MCP clients. |
-| `mcp.streaming` | `config.yaml` | Enables streaming result payloads when set to `true`. |
-| `tools.timeout` | `config.yaml` | Execution timeout applied to every MCP tool invocation. |
-| `cache.default_ttl` | `config.yaml` | Default TTL for cached MCP tool results. |
-
-To override a configuration value, set the corresponding environment variable (e.g. `MCP_STREAMING=true`) or provide a `config.yaml` file when launching the backend.
-
-## Client Registration
-
-- **API Token** – Generate via admin workflow and provide with the `Authorization: Bearer <token>` header.
-- **Role Alignment** – Ensure the service account has the `execute_tools` permission. Additional permissions (e.g. `view_reports`) unlock related MCP extensions.
-- **MFA** – Service accounts can be configured with TOTP secrets. Provide a valid OTP in the `X-MCP-OTP` header for high-sensitivity operations.
-
-## Tool Discovery
-
-Invoke the registry introspection endpoint to retrieve MCP tool descriptors:
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:7700/api/mcp/registry
+definitions = list_tool_definitions()
+print(f"Registry tracks {registry_size()} tool stubs")
 ```
 
-The response includes:
+Each definition mirrors the legacy MCP schema with fields for `id`, `category`,
+`summary`, `input_schema`, `required_permissions`, and an estimated duration.
 
-- Tool metadata (`id`, `category`, `summary`)
-- `inputSchema`/`outputSchema` definitions (Zod compatible)
-- Required permissions and estimated duration hints
+## Configuration Blueprint
 
-## Execution Policies
+1. Copy the starter configuration and tailor it to your environment:
 
-- **Approvals** – For tools with the `approve` flag, submit an approval event via the `/api/command` endpoint or approve from the UI control center.
-- **Streaming** – Enable `mcp.streaming` to receive incremental payloads for long-running scans.
-- **Caching** – The Smart Caching Manager hashes `toolId + params`. Use `noCache=true` to bypass.
-- **Rate Limits** – Configure reverse proxies (e.g. Nginx) or service meshes for rate limiting; Tornado.ai enforces concurrency guardrails via the APME module.
+   ```bash
+   cp docs/mcp-config.example.yaml ~/.config/tornado-ai/mcp.yaml
+   ```
 
-## Troubleshooting
+2. Edit the file to reference your FastAPI host and any authentication tokens:
 
-| Symptom | Resolution |
-| --- | --- |
-| `401 Unauthorized` | Verify token scopes and ensure the clock skew between client/server is <30s. |
-| Missing tools | Run `pnpm mcp` to regenerate registry caches or confirm the tool is enabled via the control center. |
-| Stale results | Clear the cache with `DELETE /api/cache` or disable caching using `noCache`. |
-| Streaming stalls | Confirm `mcp.streaming` is `true` and the reverse proxy supports chunked responses. |
+   ```yaml
+   # ~/.config/tornado-ai/mcp.yaml
+   transport:
+     type: http
+     endpoint: "https://tornado.example.com/api/control"
+     headers:
+       Authorization: "Bearer <your-token>"
+   tools:
+     allow:
+       - nuclei_scan.sim
+       - sqlmap_scan.sim
+       - autorecon_scan.sim
+     deny: []
+   streaming:
+     enabled: true
+     endpoint: "wss://tornado.example.com/ws/mcp"
+   telemetry:
+     notify_roles:
+       - admin
+       - pentester
+   ```
 
-## Observability
+3. Reload or restart your MCP orchestrator so it ingests the updated file. Most
+   clients poll the configuration directory on launch.
 
-- **Logging** – MCP interactions are logged via Pino at `info` level with correlation IDs.
-- **Metrics** – Exposed via `/api/telemetry` counters (`tool_calls_total`, `tool_latency_ms`).
-- **Tracing** – Each MCP execution emits a span with the correlation ID shared with UI workflows.
+> **Tip:** Keep `mcp.streaming-results` enabled in the feature toggle UI so the
+> websocket endpoints emit real-time updates when you run scans.
 
-## Change Management
+## Integrating With External MCP Servers
 
-- Validate schema updates with `pnpm test` to ensure registry integrity.
-- Document new tools in `docs/TOOLS.md` and update the UI catalogue where applicable.
-- Coordinate with the Control Center to align feature toggles (e.g., `mcp.streaming-results`).
+If you operate a separate MCP server, feed it Tornado.ai's registry entries:
+
+1. Load the definitions using the helper above.
+2. Convert each entry into the format required by your MCP server (YAML or
+   JSON). The schema fields map one-to-one with the MCP specification.
+3. Publish the resulting schema through your transport of choice (HTTP or
+   WebSocket).
+4. Point your client configuration (see above) at the published transport.
+
+## Validation Checklist
+
+- `pytest tests/test_mcp_registry.py` passes—ensuring the registry payloads
+  remain schema compliant.
+- `python -m tornado_ai.mcp.registry` (see helper script below) prints the tool
+  count and highlights missing dependencies.
+- Your MCP hub acknowledges the external configuration file and lists Tornado.ai
+  tools in its catalog.
+
+```python
+if __name__ == "__main__":
+    from tornado_ai.mcp.registry import list_tool_definitions
+
+    for definition in list_tool_definitions():
+        print(f"- {definition.id}: {definition.summary}")
+```
+
+## Roadmap
+
+- Implement a native MCP HTTP/WebSocket adapter inside the FastAPI service.
+- Stream tool execution telemetry once the execution engine is rebuilt.
+- Document authentication and rate-limiting strategies alongside the transport.
+
+Track progress in the repository issues. Until then, REST remains the supported
+integration surface, supplemented by the configuration guide above.

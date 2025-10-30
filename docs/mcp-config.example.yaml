@@ -1,0 +1,24 @@
+# Example MCP client configuration for Tornado AI
+transport:
+  type: http
+  endpoint: "http://localhost:8000/api/control"
+  headers: {}
+
+streaming:
+  enabled: false  # Flip to true once a websocket bridge is deployed
+  endpoint: "ws://localhost:8000/ws/mcp"
+
+telemetry:
+  notify_roles:
+    - admin
+    - pentester
+
+# Configure tool allow/deny lists to scope client-side execution
+# `allow: []` means "allow everything"; explicitly listing entries provides
+# coarse-grained whitelisting similar to Nessus/Burp policy scopes.
+tools:
+  allow:
+    - nuclei_scan.sim
+    - sqlmap_scan.sim
+    - autorecon_scan.sim
+  deny: []

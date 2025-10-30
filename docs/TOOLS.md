@@ -2,22 +2,24 @@
 
 Tornado.ai maintains two complementary views of its security tooling landscape:
 
-1. **Simulated MCP registry** – the executable subset exposed by the Model Context Protocol
-   server and described in [`src/tools/definitions.ts`](../src/tools/definitions.ts).
-2. **Curated capability catalog** – a broader research index that tracks 180+ offensive and
-   defensive utilities for roadmap planning. The structured dataset lives in
-   [`src/tools/catalog.ts`](../src/tools/catalog.ts) and is validated by
-   `SecurityToolsCollectionSchema` within [`src/shared/types.ts`](../src/shared/types.ts).
+1. **Simulated MCP registry** – the executable subset exposed via
+   `tornado_ai.tools.definitions`. These entries are consumed by the control
+   center and will eventually back the MCP transport.
+2. **Curated capability catalog** – a broader research index that tracks 180+
+   offensive and defensive utilities for roadmap planning. The structured
+   dataset lives in `tornado_ai.tools.catalog` and is validated by the
+   `SecurityToolsCollection` Pydantic model inside `tornado_ai.shared.types`.
 
-Both layers feed the AIDE and ASME engines: the MCP registry defines what is runnable today,
-while the curated catalog highlights coverage gaps and prioritizes future integrations.
+Both layers feed the Control Center and RBAC helpers: the registry defines what
+is runnable today, while the curated catalog highlights coverage gaps and
+prioritizes future integrations.
 
-## MCP Tooling Surface
+## MCP Tooling Surface (Simulated)
 
-The MCP registry currently exposes the following simulated tools:
+The registry currently exposes the following simulated tools:
 
-- **Network**: `nmap_scan.sim`, `masscan_scan.sim`, `rustscan_scan.sim`, `amass_enum.sim`,
-  `autorecon_scan.sim`
+- **Network**: `nmap_scan.sim`, `masscan_scan.sim`, `rustscan_scan.sim`,
+  `amass_enum.sim`, `autorecon_scan.sim`
 - **Web Application**: `gobuster_scan.sim`, `ffuf_scan.sim`, `nuclei_scan.sim`,
   `sqlmap_scan.sim`, `wpscan_scan.sim`
 - **Cloud**: `prowler_assess.sim`, `scout_suite_audit.sim`, `trivy_scan.sim`,
@@ -26,20 +28,20 @@ The MCP registry currently exposes the following simulated tools:
 - **CTF / Forensics**: `volatility_analyze.sim`, `binwalk_analyze.sim`
 - **OSINT**: `recon_ng.sim`, `spiderfoot.sim`, `theharvester.sim`
 
-Each MCP definition includes the following metadata:
+Each definition includes:
 
-- `summary` — high-level description of capability
-- `inputSchema` — shape of required parameters
-- `requiredPermissions` — RBAC requirements for execution
-- `estimatedDuration` — expected runtime in seconds
+- `summary` — high-level description of the capability.
+- `input_schema` — shape of required parameters (expressed as Python dicts).
+- `required_permissions` — RBAC requirements for execution.
+- `estimated_duration` — expected runtime in seconds.
 
-Extend the runnable inventory by appending to `src/tools/definitions.ts` and wiring the
-corresponding handlers inside the ASME subsystem.
+Extend the runnable inventory by appending to `tornado_ai.tools.definitions`
+and updating any domain logic that depends on the new entries.
 
 ## Curated Security Tools Catalog (v1.0)
 
-The research catalog is versioned and timestamped to simplify alignment with external threat
-intelligence efforts.
+The research catalog is versioned and timestamped to simplify alignment with
+external threat intelligence efforts.
 
 - **Version:** 1.0
 - **Last updated:** 2025-10-30
@@ -59,10 +61,12 @@ intelligence efforts.
 | Cryptography & Hash Analysis | Frequency-Analysis, RSATool, FactorDB, John the Ripper, Hashcat, CyberChef |
 | Bug Bounty & OSINT Arsenal | Amass, Subfinder, Hakrawler, HTTPx, ParamSpider, Aquatone, Subjack, DNSEnum, Fierce, TheHarvester, Sherlock, Social-Analyzer, Recon-ng, Maltego, SpiderFoot, Shodan, Censys, Have I Been Pwned, Pipl, TruffleHog |
 
-> **Note:** Some categories contain representative subsets of the total tool count to keep the
-> documentation digestible. The canonical dataset resides in `src/tools/catalog.ts`, and the
-> associated Vitest coverage (`tests/tools-catalog.test.ts`) ensures structural integrity,
-> versioning, and alignment with reported statistics.
+> **Note:** Some categories contain representative subsets of the total tool
+> count to keep the documentation digestible. The canonical dataset resides in
+> `tornado_ai.tools.catalog`, and the accompanying pytest coverage
+> (`tests/test_tools_catalog.py`) ensures structural integrity, versioning, and
+> alignment with reported statistics.
 
-When expanding the curated catalog, update `src/tools/catalog.ts`, adjust the summary table
-above, and regenerate any downstream intelligence dashboards that consume the schema.
+When expanding the curated catalog, update `tornado_ai.tools.catalog`, adjust
+this summary table, and regenerate any downstream dashboards that consume the
+schema.
