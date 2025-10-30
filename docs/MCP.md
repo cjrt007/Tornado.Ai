@@ -1,6 +1,6 @@
 # Model Context Protocol (MCP) Configuration Guide
 
-The Tornado.ai MCP server exposes every supported security tool, checklist action, and orchestration primitive via the Model Context Protocol so automation platforms can discover capabilities and execute workloads safely. This guide documents configuration surfaces, deployment considerations, and validation workflows.
+The Tornado.ai MCP server exposes every supported security tool, checklist action, and orchestration primitive via the Model Context Protocol so automation platforms can discover capabilities and execute workloads safely. This guide documents configuration surfaces, deployment considerations, and validation workflows. For client-specific connection instructions (Copilot, Roo Code, Cursor, Claude, etc.), see [AI Client Integration](AI-CLIENTS.md).
 
 ## Quick Start
 

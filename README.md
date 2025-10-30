@@ -264,6 +264,7 @@ pnpm test
 - [Checklist System](docs/CHECKLISTS.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [MCP Configuration](docs/MCP.md)
+- [AI Client Integration](docs/AI-CLIENTS.md)
 - [UI Overview](ui/README.md)
 
 ## FAQ
@@ -286,9 +287,14 @@ Nessus-grade scheduling and guardrails.
 MFA utilities reside in `src/auth/mfa/totp.ts`. Ensure `MFA_ISSUER` is set and expose the MFA
 setup/verification routes from `src/auth/handlers/auth.ts` through your Fastify router.
 
-**How are security tools registered with the MCP server?**  
+**How are security tools registered with the MCP server?**
 The registry is defined in `src/tools/definitions.ts` and exported via `src/mcp/registry`.
 `pnpm mcp` prints the descriptor catalog for client consumption.
+
+**How do I connect AI coding assistants (Copilot, Cursor, Claude, etc.) to Tornado.ai?**
+Follow the step-by-step instructions in [docs/AI-CLIENTS.md](docs/AI-CLIENTS.md). Each
+client uses the MCP endpoint at `http://localhost:7700` with a bearer token scoped to the
+permissions it needs (e.g., `execute_tools`).
 
 **Can I containerize Tornado.ai?**
 Yes. The repository ships with a production-focused Dockerfile and `docker-compose.yml`.
