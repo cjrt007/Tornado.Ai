@@ -1,0 +1,11 @@
+id,title,category,description,severity,references
+A01,Injection Prevention,Web Applications,"Verify parameterized queries are enforced for all database access.",high,"https://owasp.org/Top10/A03_2021-Injection/"
+A02,Broken Authentication,Identity,"Confirm MFA and session management policies meet OWASP guidance.",critical,"https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/"
+A03,Sensitive Data Protection,Data Security,"Assess transport encryption strength and secret storage practices.",high,"https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
+A04,Insecure Design,Architecture,"Review threat models and abuse cases for coverage of critical workflows.",medium,"https://owasp.org/Top10/A04_2021-Insecure_Design/"
+A05,Security Misconfiguration,Configuration,"Check baseline hardening, HTTP headers, and admin surface exposure.",high,"https://owasp.org/Top10/A05_2021-Security_Misconfiguration/"
+A06,Vulnerable Components,Dependency,"Ensure SBOM tracking and dependency patch cadence are documented.",medium,"https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/"
+A07,Identification & AuthZ,Access Control,"Exercise horizontal and vertical access controls across roles.",critical,"https://owasp.org/Top10/A01_2021-Broken_Access_Control/"
+A08,Software Integrity,Supply Chain,"Validate signing of releases and CI/CD guardrails for secrets.",medium,"https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/"
+A09,Logging & Monitoring,Observability,"Confirm log retention, alerting, and anomaly detection for auth events.",low,"https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/"
+A10,Server-Side Request Forgery,Network,"Test SSRF controls, deny-lists, and metadata service hardening.",medium,"https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_(SSRF)/"

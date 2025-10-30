@@ -3,8 +3,10 @@
 Tornado.ai maintains two complementary views of its security tooling landscape:
 
 1. **Simulated MCP registry** – the executable subset exposed via
-   `tornado_ai.tools.definitions`. These entries are consumed by the control
-   center and will eventually back the MCP transport.
+   `tornado_ai.tools.definitions` and mediated by `tornado_ai.tools.registry`.
+   Each entry references a dry-run adapter in `tornado_ai.tools.adapters` so the
+   ASME engine can produce realistic responses without shelling out to real
+   tooling.
 2. **Curated capability catalog** – a broader research index that tracks 180+
    offensive and defensive utilities for roadmap planning. The structured
    dataset lives in `tornado_ai.tools.catalog` and is validated by the
@@ -16,27 +18,34 @@ prioritizes future integrations.
 
 ## MCP Tooling Surface (Simulated)
 
-The registry currently exposes the following simulated tools:
+`tool_registry` currently exposes the following simulated tools and adapters:
 
-- **Network**: `nmap_scan.sim`, `masscan_scan.sim`, `rustscan_scan.sim`,
-  `amass_enum.sim`, `autorecon_scan.sim`
-- **Web Application**: `gobuster_scan.sim`, `ffuf_scan.sim`, `nuclei_scan.sim`,
-  `sqlmap_scan.sim`, `wpscan_scan.sim`
-- **Cloud**: `prowler_assess.sim`, `scout_suite_audit.sim`, `trivy_scan.sim`,
-  `kube_hunter_scan.sim`, `kube_bench_check.sim`
-- **Binary**: `ghidra_analyze.sim`, `radare2_analyze.sim`, `angr_analyze.sim`
-- **CTF / Forensics**: `volatility_analyze.sim`, `binwalk_analyze.sim`
-- **OSINT**: `recon_ng.sim`, `spiderfoot.sim`, `theharvester.sim`
+- **Network**: `nmap_scan.sim` (`network_enumerator`), `masscan_scan.sim`
+  (`network_burst_enumerator`), `autorecon_scan.sim` (`recon_orchestrator`).
+- **Web Application**: `gobuster_scan.sim` (`web_directory_enumerator`),
+  `nuclei_scan.sim` (`web_template_scanner`), `sqlmap_scan.sim`
+  (`sql_injection_assessor`).
+- **Cloud**: `prowler_assess.sim` (`cloud_misconfig_auditor`),
+  `scout_suite_audit.sim` (`cloud_multiscan`).
+- **Binary**: `ghidra_analyze.sim` (`binary_ghidra_pipeline`).
+- **CTF**: `pwntools_ctf.sim` (`ctf_exploit_helper`).
+- **OSINT**: `osint_profile_mapper.sim` (`osint_surface_mapper`).
 
 Each definition includes:
 
 - `summary` — high-level description of the capability.
-- `input_schema` — shape of required parameters (expressed as Python dicts).
-- `required_permissions` — RBAC requirements for execution.
-- `estimated_duration` — expected runtime in seconds.
+- `inputSchema` / `outputSchema` — JSON-schema-like descriptions for MCP usage.
+- `requiredPermissions` — RBAC requirements for execution.
+- `estimatedDuration` — expected runtime in seconds.
+- `decision_weight` and `cvss_bias` — hints consumed by TSA during tool
+  selection.
+- Runtime policy decisions are reported back through
+  `ToolExecutionResult.telemetry.runtime`; Windows hosts automatically leverage
+  the Kali GUI container described in the [README runtime recap](../README.md#runtime-policy-recap).
 
-Extend the runnable inventory by appending to `tornado_ai.tools.definitions`
-and updating any domain logic that depends on the new entries.
+Extend the runnable inventory by appending to
+`tornado_ai.tools.definitions.ToolDefinition`, registering a dry-run adapter in
+`tornado_ai.tools.adapters`, and adding any scoring metadata required by TSA.
 
 ## Curated Security Tools Catalog (v1.0)
 
