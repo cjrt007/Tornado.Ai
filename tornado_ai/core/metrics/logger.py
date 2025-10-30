@@ -1,16 +1,34 @@
 """Application logging helpers."""
 from __future__ import annotations
 
+import json
 import logging
+from logging import LogRecord
 from logging.config import dictConfig
 from typing import Any, Dict, Optional
+
+
+class JsonFormatter(logging.Formatter):
+    """Structured JSON log formatter for observability pipelines."""
+
+    def format(self, record: LogRecord) -> str:  # pragma: no cover - logging string formatting
+        payload = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exc_info"] = self.formatException(record.exc_info)
+        payload.update(getattr(record, "extra", {}))
+        return json.dumps(payload, default=str)
 
 _DEFAULT_LOG_CONFIG: Dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "default": {
-            "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            "()": JsonFormatter,
         }
     },
     "handlers": {
