@@ -9,7 +9,7 @@ export const buildServer = (): FastifyInstance => {
   const logger = createLogger(config.logging);
   const app = Fastify({
     logger
-  });
+  }) as FastifyInstance;
 
   if (config.server.corsEnabled) {
     app.register(cors, { origin: true });

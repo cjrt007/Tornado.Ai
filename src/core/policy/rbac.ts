@@ -1,7 +1,5 @@
 export type Permission = 'execute_tools' | 'view_reports' | 'manage_users' | 'configure_system';
-
-const WILDCARD_PERMISSION = '*' as const;
-type RolePermissions = Permission[] | typeof WILDCARD_PERMISSION;
+type RolePermissions = Permission[] | '*';
 
 const ALL_PERMISSIONS: Permission[] = [
   'execute_tools',
@@ -10,19 +8,17 @@ const ALL_PERMISSIONS: Permission[] = [
   'configure_system'
 ];
 
-const rolePermissions: Record<string, RolePermissions> = {
-  admin: WILDCARD_PERMISSION,
+const rolePermissions = {
+  admin: '*',
   pentester: ['execute_tools', 'view_reports'],
   auditor: ['view_reports'],
   viewer: ['view_reports']
-};
+} as const satisfies Record<string, RolePermissions>;
 
 export type Role = keyof typeof rolePermissions;
-
 const expandPermissions = (role: Role): Permission[] => {
   const perms = rolePermissions[role];
-
-  if (perms === WILDCARD_PERMISSION) {
+  if (perms === '*') {
     return [...ALL_PERMISSIONS];
   }
 
